@@ -5447,7 +5447,9 @@ window.addEventListener("DOMContentLoaded", async ()=> {
 // ── Natural Language → ORS Translator ────────────────────────────────────────
 
 (function initNLTranslator() {
-  const KEY_STORE = 'plo_anthropic_key';
+  const KEY_STORE      = 'plo_anthropic_key';
+  const EXAMPLES_STORE = 'plo_nl_examples';
+  const MAX_EXAMPLES   = 30; // cap to avoid token bloat
 
   const elInput      = document.getElementById('nlInput');
   const elApiKey     = document.getElementById('nlApiKey');
@@ -5472,6 +5474,38 @@ window.addEventListener("DOMContentLoaded", async ()=> {
     else localStorage.removeItem(KEY_STORE);
   });
 
+  // ── Few-shot example store ──────────────────────────────────────────────────
+
+  function loadExamples() {
+    try { return JSON.parse(localStorage.getItem(EXAMPLES_STORE) || '[]'); }
+    catch(_) { return []; }
+  }
+
+  function saveExample(input, ors) {
+    const examples = loadExamples();
+    // Remove any prior entry with the same input to avoid duplicates
+    const deduped = examples.filter(e => e.input !== input);
+    deduped.push({ input, ors });
+    // Keep most recent MAX_EXAMPLES
+    const trimmed = deduped.slice(-MAX_EXAMPLES);
+    localStorage.setItem(EXAMPLES_STORE, JSON.stringify(trimmed));
+  }
+
+  function buildMessages(description) {
+    const examples = loadExamples();
+    const messages = [];
+    // Inject saved examples as alternating user/assistant turns
+    for (const ex of examples) {
+      if (ex.input === description) continue; // skip if asking exact same thing again
+      messages.push({ role: 'user',      content: ex.input });
+      messages.push({ role: 'assistant', content: JSON.stringify({ ors: ex.ors, explanation: '' }) });
+    }
+    messages.push({ role: 'user', content: description });
+    return messages;
+  }
+
+  // ── System prompt ───────────────────────────────────────────────────────────
+
   const SYSTEM_PROMPT = `You are an expert at converting plain-English poker range descriptions into ORS (Omaha Range Syntax) for Pot Limit Omaha (PLO).
 
 ORS syntax rules:
@@ -5495,8 +5529,12 @@ ORS syntax rules:
 - Rundown syntax: list each combo or use rank groups
 - "Lowest card X" means the 4th card is X, so ranks are X, X+1, X+2, X+3
 
+The conversation history contains examples of previous translations the user approved. Use them to match their terminology and preferences.
+
 Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
 {"ors": "<ORS expression>", "explanation": "<brief plain-English explanation of what the ORS covers>"}`;
+
+  // ── UI helpers ──────────────────────────────────────────────────────────────
 
   function showError(msg) {
     elError.textContent = msg;
@@ -5507,6 +5545,14 @@ Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
   function hideError() {
     elError.style.display = 'none';
   }
+
+  function updateExampleCount() {
+    const n = loadExamples().length;
+    const label = elBtn.closest('div')?.querySelector('.nl-example-count');
+    if (label) label.textContent = n ? `${n} saved example${n !== 1 ? 's' : ''}` : '';
+  }
+
+  // ── Translation ─────────────────────────────────────────────────────────────
 
   async function doTranslate() {
     const description = elInput.value.trim();
@@ -5534,7 +5580,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
           model: 'claude-haiku-4-5-20251001',
           max_tokens: 512,
           system: SYSTEM_PROMPT,
-          messages: [{ role: 'user', content: description }],
+          messages: buildMessages(description),
         }),
       });
 
@@ -5551,7 +5597,6 @@ Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
 
       let parsed;
       try {
-        // Strip markdown code fences if present
         const cleaned = raw.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
         parsed = JSON.parse(cleaned);
       } catch(_) {
@@ -5576,6 +5621,8 @@ Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
     }
   }
 
+  // ── Event listeners ─────────────────────────────────────────────────────────
+
   elBtn.addEventListener('click', doTranslate);
 
   elInput.addEventListener('keydown', e => {
@@ -5585,12 +5632,28 @@ Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
   elInsertBtn.addEventListener('click', () => {
     const target = elTarget.value; // 'A', 'B', or 'C'
     const ors = elOrs.textContent;
+    const input = elInput.value.trim();
     const ta = document.getElementById('range' + target);
     if (ta && ors) {
       ta.value = ors;
       ta.dispatchEvent(new Event('input'));
+      // Save as approved example for future few-shot context
+      if (input) {
+        saveExample(input, ors);
+        updateExampleCount();
+      }
     }
   });
+
+  // Inject example counter label next to the translate button
+  const btnRow = elBtn.parentElement;
+  if (btnRow) {
+    const countEl = document.createElement('span');
+    countEl.className = 'nl-example-count subtle';
+    countEl.style.cssText = 'font-size:10px; opacity:.5; white-space:nowrap;';
+    btnRow.appendChild(countEl);
+  }
+  updateExampleCount();
 })();
 </script>
 </body>
