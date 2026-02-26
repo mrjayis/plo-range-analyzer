@@ -1027,6 +1027,35 @@ body:not(.dark) .quiz-tag { background: rgba(0,0,0,.05); border-color: rgba(0,0,
         </div>
       </div>
 
+      <!-- Natural Language → ORS translator -->
+      <div id="nlPanel" style="margin-top:14px; margin-bottom:4px;">
+        <div style="display:flex; gap:8px; align-items:flex-start;">
+          <textarea id="nlInput" rows="2" placeholder="Describe a range in plain English… e.g. 'all double-suited and single-suited rundowns with the lowest card being a 4'" style="flex:1; min-height:52px; resize:vertical;"></textarea>
+          <div style="display:flex; flex-direction:column; gap:5px; flex-shrink:0;">
+            <div style="display:flex; gap:5px;">
+              <select id="nlTarget" style="height:26px; font-size:12px; padding:0 4px;">
+                <option value="A">→ A</option>
+                <option value="B">→ B</option>
+                <option value="C">→ C</option>
+              </select>
+              <button type="button" id="nlTranslateBtn" class="btn-xs grn" style="height:26px;">Translate</button>
+            </div>
+            <div style="display:flex; gap:5px; align-items:center;">
+              <span class="small" style="opacity:.55; font-size:11px; white-space:nowrap;">API key</span>
+              <input type="password" id="nlApiKey" placeholder="sk-ant-…" style="height:24px; font-size:11px; width:140px;" />
+            </div>
+          </div>
+        </div>
+        <div id="nlResult" style="display:none; margin-top:7px; padding:9px 12px; border-radius:8px; border:1px solid rgba(16,185,129,.3); background:rgba(16,185,129,.05);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+            <code id="nlOrs" style="font-size:12px; word-break:break-all; flex:1; color:var(--accent);"></code>
+            <button type="button" id="nlInsertBtn" class="btn-xs grn" style="flex-shrink:0;">Insert</button>
+          </div>
+          <div id="nlExplain" class="subtle" style="font-size:11px; margin-top:5px; opacity:.7;"></div>
+        </div>
+        <div id="nlError" style="display:none; margin-top:5px; font-size:12px; color:var(--bad);"></div>
+      </div>
+
       <div style="margin-top:14px;">
         <!-- A + B side by side -->
         <div class="range-ab-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -5414,6 +5443,155 @@ window.addEventListener("DOMContentLoaded", async ()=> {
   try{ await initRangeLibrary(); }catch(e){ console.warn("initRangeLibrary failed", e); }
   try{ initExplorerUI(); }catch(e){ console.warn("initExplorerUI failed", e); }
 });
+
+// ── Natural Language → ORS Translator ────────────────────────────────────────
+
+(function initNLTranslator() {
+  const KEY_STORE = 'plo_anthropic_key';
+
+  const elInput      = document.getElementById('nlInput');
+  const elApiKey     = document.getElementById('nlApiKey');
+  const elTarget     = document.getElementById('nlTarget');
+  const elBtn        = document.getElementById('nlTranslateBtn');
+  const elInsertBtn  = document.getElementById('nlInsertBtn');
+  const elResult     = document.getElementById('nlResult');
+  const elOrs        = document.getElementById('nlOrs');
+  const elExplain    = document.getElementById('nlExplain');
+  const elError      = document.getElementById('nlError');
+
+  if (!elBtn) return; // panel not present
+
+  // Restore saved key
+  const savedKey = localStorage.getItem(KEY_STORE);
+  if (savedKey) elApiKey.value = savedKey;
+
+  // Persist key on change
+  elApiKey.addEventListener('change', () => {
+    const k = elApiKey.value.trim();
+    if (k) localStorage.setItem(KEY_STORE, k);
+    else localStorage.removeItem(KEY_STORE);
+  });
+
+  const SYSTEM_PROMPT = `You are an expert at converting plain-English poker range descriptions into ORS (Omaha Range Syntax) for Pot Limit Omaha (PLO).
+
+ORS syntax rules:
+- Ranks: A K Q J T 9 8 7 6 5 4 3 2
+- Card groups: B=AKQJ (broadway), M=T987 (middle), Z=65432 (low), N=KQJT9, L=A-8, W=A2345
+- Suits: s=spades h=hearts d=diamonds c=clubs
+- Wildcards: * = any rank, *s = any spade
+- Pattern: 4 cards, e.g. AA** = pair of aces with any two cards
+- Double-suited: *s*s*h*h or any two cards share a suit (use *x*x*y*y where x≠y)
+- Single-suited (rainbow): all 4 different suits
+- Flush draw = two cards of same suit
+- Two-suited = two pairs of suited cards, e.g. *s*s*h*h
+- Suitedness shorthand: ds = double suited (*s*s*h*h style), ss = single suited (one suit pair)
+- Rundowns: consecutive ranks, e.g. 9876, KQJT, 5432
+- Set operations: , (union)  ! (difference)  & (intersection)
+- Percentile: 15% = top 15% by equity, 15%:AA** = top 15% filtered to aces
+- Explicit combo: AsKsQhJh@100
+- Example: double-suited rundowns T-high and above = KQJT, QJT9, JT98, T987 with ds flag
+- For suitedness in ORS, specify suits explicitly on cards or use patterns
+- Two cards of one suit + two of another = double-suited: e.g. *s*s*h*h** but properly it's 4-card: [rank]s[rank]s[rank]h[rank]h or use *s*s*h*h
+- Rundown syntax: list each combo or use rank groups
+- "Lowest card X" means the 4th card is X, so ranks are X, X+1, X+2, X+3
+
+Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
+{"ors": "<ORS expression>", "explanation": "<brief plain-English explanation of what the ORS covers>"}`;
+
+  function showError(msg) {
+    elError.textContent = msg;
+    elError.style.display = 'block';
+    elResult.style.display = 'none';
+  }
+
+  function hideError() {
+    elError.style.display = 'none';
+  }
+
+  async function doTranslate() {
+    const description = elInput.value.trim();
+    if (!description) { showError('Please enter a range description.'); return; }
+
+    const apiKey = elApiKey.value.trim();
+    if (!apiKey) { showError('Please enter your Anthropic API key (sk-ant-…).'); return; }
+    localStorage.setItem(KEY_STORE, apiKey);
+
+    hideError();
+    elResult.style.display = 'none';
+    elBtn.disabled = true;
+    elBtn.textContent = '…';
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 512,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: description }],
+        }),
+      });
+
+      if (!resp.ok) {
+        const errBody = await resp.text();
+        let msg = `API error ${resp.status}`;
+        try { msg = JSON.parse(errBody)?.error?.message || msg; } catch(_) {}
+        showError(msg);
+        return;
+      }
+
+      const data = await resp.json();
+      const raw = data?.content?.[0]?.text?.trim() || '';
+
+      let parsed;
+      try {
+        // Strip markdown code fences if present
+        const cleaned = raw.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
+        parsed = JSON.parse(cleaned);
+      } catch(_) {
+        showError('Could not parse model response. Try rephrasing your description.\n\nRaw: ' + raw.slice(0, 200));
+        return;
+      }
+
+      const ors = (parsed.ors || '').trim();
+      const explanation = (parsed.explanation || '').trim();
+
+      if (!ors) { showError('Model returned empty ORS. Try rephrasing.'); return; }
+
+      elOrs.textContent = ors;
+      elExplain.textContent = explanation;
+      elResult.style.display = 'block';
+
+    } catch(e) {
+      showError('Network error: ' + e.message);
+    } finally {
+      elBtn.disabled = false;
+      elBtn.textContent = 'Translate';
+    }
+  }
+
+  elBtn.addEventListener('click', doTranslate);
+
+  elInput.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') doTranslate();
+  });
+
+  elInsertBtn.addEventListener('click', () => {
+    const target = elTarget.value; // 'A', 'B', or 'C'
+    const ors = elOrs.textContent;
+    const ta = document.getElementById('range' + target);
+    if (ta && ors) {
+      ta.value = ors;
+      ta.dispatchEvent(new Event('input'));
+    }
+  });
+})();
 </script>
 </body>
 </html>
