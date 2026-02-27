@@ -3206,9 +3206,11 @@ function flopTypeFlags(flopCards){
   const is2Bway = (bway === 2);
   const is3Bway = (bway === 3);
 
+  const isUnpaired = rankCounts[0] === 1; // all 3 ranks distinct
+
   return {
     isTwoTone, isMonotone, isRainbow,
-    isPaired, isTrips,
+    isPaired, isTrips, isUnpaired,
     isHighPaired, isLowPaired,
     is2Bway, is3Bway,
     isConn3, isHighConn, isLowConn, isLowFlop
@@ -4217,6 +4219,7 @@ function flopTypesCatalog(){
     {id:"rainbow", label:"Rainbow (shd)", icon:["As","7h","2d"], test:(f)=>f.isRainbow},
     {id:"paired", label:"Paired (xxy)", icon:["Ah","Ad","7c"], test:(f)=>f.isPaired},
     {id:"trips", label:"Trips (xxx)", icon:["As","Ah","Ad"], test:(f)=>f.isTrips},
+    {id:"unpaired", label:"Unpaired (xyz)", icon:["Js","7d","2h"], test:(f)=>f.isUnpaired},
     {id:"lowflop", label:"Low-card flop (max \u22648)", icon:["6s","4h","2d"], test:(f)=>f.isLowFlop},
     {id:"2bway", label:"2-broadway flop", icon:["As","Kd","7h"], test:(f)=>f.is2Bway},
     {id:"3bway", label:"3-broadway flop", icon:["As","Kd","Qh"], test:(f)=>f.is3Bway},
@@ -5214,6 +5217,8 @@ function getExplorerCombinations() {
     'trips|highconn', 'trips|lowconn',
     // Trips = all same rank → either 0 or 3 broadways, never exactly 2
     'trips|2bway',
+    // Unpaired is mutually exclusive with paired and trips
+    'unpaired|paired', 'unpaired|trips',
   ]);
 
   const ck2 = (a, b) => [a,b].sort().join('|');
