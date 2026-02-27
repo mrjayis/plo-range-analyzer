@@ -1042,7 +1042,7 @@ body:not(.dark) .quiz-tag { background: rgba(0,0,0,.05); border-color: rgba(0,0,
             </div>
             <div style="display:flex; gap:5px; align-items:center;">
               <span class="small" style="opacity:.55; font-size:11px; white-space:nowrap;">API key</span>
-              <input type="text" id="nlApiKey" placeholder="sk-ant-…" autocomplete="off" spellcheck="false" style="height:24px; font-size:11px; width:140px; -webkit-text-security:disc;" />
+              <div id="nlApiKeyMount" style="display:inline-block;"></div>
             </div>
           </div>
         </div>
@@ -5500,7 +5500,20 @@ window.addEventListener("DOMContentLoaded", async ()=> {
   const MAX_EXAMPLES   = 30; // cap to avoid token bloat
 
   const elInput      = document.getElementById('nlInput');
-  const elApiKey     = document.getElementById('nlApiKey');
+
+  // Build the API key input dynamically so the browser never scans it as a
+  // credential field during page-load form analysis.
+  const elApiKey = document.createElement('input');
+  elApiKey.setAttribute('type', 'text');
+  elApiKey.setAttribute('autocomplete', 'one-time-code');
+  elApiKey.setAttribute('spellcheck', 'false');
+  elApiKey.setAttribute('data-lpignore', 'true');       // LastPass
+  elApiKey.setAttribute('data-1p-ignore', '');          // 1Password
+  elApiKey.setAttribute('data-form-type', 'other');     // Chrome heuristic
+  elApiKey.setAttribute('placeholder', 'Anthropic API key');
+  elApiKey.style.cssText = 'height:24px; font-size:11px; width:140px; -webkit-text-security:disc;';
+  const mount = document.getElementById('nlApiKeyMount');
+  if (mount) mount.appendChild(elApiKey);
   const elTarget     = document.getElementById('nlTarget');
   const elBtn        = document.getElementById('nlTranslateBtn');
   const elInsertBtn  = document.getElementById('nlInsertBtn');
