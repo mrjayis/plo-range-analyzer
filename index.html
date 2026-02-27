@@ -5482,10 +5482,10 @@ window.addEventListener("DOMContentLoaded", async ()=> {
     const open = localStorage.getItem(ADV_KEY) === '1';
     if (open) { advPanel.style.display = ''; advBtn.style.opacity = '1'; }
     advBtn.addEventListener('click', () => {
-      const nowOpen = advPanel.style.display === 'none' || advPanel.style.display === '';
-      advPanel.style.display = nowOpen ? '' : 'none';
-      advBtn.style.opacity = nowOpen ? '1' : '.65';
-      localStorage.setItem(ADV_KEY, nowOpen ? '1' : '0');
+      const open = advPanel.style.display === 'none';
+      advPanel.style.display = open ? '' : 'none';
+      advBtn.style.opacity = open ? '1' : '.65';
+      localStorage.setItem(ADV_KEY, open ? '1' : '0');
     });
   }
 });
