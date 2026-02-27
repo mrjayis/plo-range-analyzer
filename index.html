@@ -1178,7 +1178,7 @@ body:not(.dark) .quiz-tag { background: rgba(0,0,0,.05); border-color: rgba(0,0,
             </div>
             <table id="flopTypeTable" class="clickable">
               <thead>
-                <tr><th>Flop type</th><th class="num">P(type)</th><th class="num">Samples</th></tr>
+                <tr><th>Flop type</th><th class="num" id="flopTypeFreqHeader" title="Click to sort" style="cursor:pointer; user-select:none;">P(type) ↕</th><th class="num">Samples</th></tr>
               </thead>
               <tbody id="flopTypeBody"></tbody>
             </table>
@@ -4218,8 +4218,8 @@ function flopTypesCatalog(){
     {id:"twotone", label:"Two-tone (ssx)", icon:["As","7s","2d"], test:(f)=>f.isTwoTone},
     {id:"rainbow", label:"Rainbow (shd)", icon:["As","7h","2d"], test:(f)=>f.isRainbow},
     {id:"paired", label:"Paired (xxy)", icon:["Ah","Ad","7c"], test:(f)=>f.isPaired},
-    {id:"trips", label:"Trips (xxx)", icon:["As","Ah","Ad"], test:(f)=>f.isTrips},
     {id:"unpaired", label:"Unpaired (xyz)", icon:["Js","7d","2h"], test:(f)=>f.isUnpaired},
+    {id:"trips", label:"Trips (xxx)", icon:["As","Ah","Ad"], test:(f)=>f.isTrips},
     {id:"lowflop", label:"Low-card flop (max \u22648)", icon:["6s","4h","2d"], test:(f)=>f.isLowFlop},
     {id:"2bway", label:"2-broadway flop", icon:["As","Kd","7h"], test:(f)=>f.is2Bway},
     {id:"3bway", label:"3-broadway flop", icon:["As","Kd","Qh"], test:(f)=>f.is3Bway},
@@ -4673,11 +4673,25 @@ function mergeBucketResults(parts){
   return m;
 }
 
+let __flopTypeSortDesc = false; // false = catalog order, true = sort by freq desc
+
 function renderFlopTypeTable(explore){
   const body = document.getElementById("flopTypeBody");
   body.innerHTML = "";
-  const catalog = flopTypesCatalog();
+  let catalog = flopTypesCatalog();
   const sel = (window.__selectedExploreFtids instanceof Set) ? window.__selectedExploreFtids : new Set(["any"]);
+
+  if(__flopTypeSortDesc){
+    catalog = [...catalog].sort((a,b)=>{
+      const pa = (explore.types[a.id]?.den || 0) / explore.denAll;
+      const pb = (explore.types[b.id]?.den || 0) / explore.denAll;
+      return pb - pa;
+    });
+  }
+
+  const hdr = document.getElementById("flopTypeFreqHeader");
+  if(hdr) hdr.textContent = __flopTypeSortDesc ? "P(type) ↓" : "P(type) ↕";
+
   for(const t of catalog){
     const b = explore.types[t.id];
     const p = b.den / explore.denAll;
@@ -4691,28 +4705,62 @@ function renderFlopTypeTable(explore){
 
 function renderCompareTable(containerId, title, rows, ranges, denByRange){
   const wrap = document.getElementById(containerId);
+  if(!wrap) return;
   const cols = ranges.length;
-  let thead = `<thead><tr><th colspan="${1+cols}">${escapeHtml(title)}</th></tr><tr><th>Outcome</th>`;
-  for(const r of ranges){
-    thead += `<th class="num">P | ${escapeHtml(r)}</th>`;
-  }
-  thead += `</tr></thead>`;
 
-  let tbody = "<tbody>";
-  for(const row of rows){
-    const key = row.key;
-    tbody += `<tr><td>${escapeHtml(key)}</td>`;
+  // Compute % for each row/range to allow sorting
+  const rowsWithPct = rows.map(row => {
+    const pcts = {};
     for(const r of ranges){
       const den = denByRange[r] || 0;
-      const num = row.by[r] || 0;
-      const p = den>0 ? (num/den) : 0;
-      tbody += `<td class="num">${fmtPct(p)}</td>`;
+      pcts[r] = den > 0 ? (row.by[r] || 0) / den : 0;
     }
-    tbody += "</tr>";
-  }
-  tbody += "</tbody>";
+    return { key: row.key, by: row.by, pcts };
+  });
 
-  wrap.innerHTML = `<table>${thead}${tbody}</table>`;
+  let sortState = wrap.__sortState || 'default'; // 'default' | 'desc' | 'asc'
+
+  function applySort(data, state){
+    if(state === 'default') return data;
+    const firstRange = ranges[0];
+    return [...data].sort((a,b) =>
+      state === 'desc' ? b.pcts[firstRange] - a.pcts[firstRange]
+                       : a.pcts[firstRange] - b.pcts[firstRange]
+    );
+  }
+
+  function render(state){
+    wrap.__sortState = state;
+    const arrow = state === 'desc' ? ' ↓' : state === 'asc' ? ' ↑' : ' ↕';
+    const sortedRows = applySort(rowsWithPct, state);
+
+    let thead = `<thead><tr><th colspan="${1+cols}">${escapeHtml(title)}</th></tr><tr><th>Outcome</th>`;
+    for(const r of ranges){
+      const isSortCol = r === ranges[0];
+      const style = isSortCol ? ' style="cursor:pointer;user-select:none;"' : '';
+      thead += `<th class="num"${style} data-sortcol="freq">P | ${escapeHtml(r)}${isSortCol ? arrow : ''}</th>`;
+    }
+    thead += `</tr></thead>`;
+
+    let tbody = "<tbody>";
+    for(const row of sortedRows){
+      tbody += `<tr><td>${escapeHtml(row.key)}</td>`;
+      for(const r of ranges){
+        tbody += `<td class="num">${fmtPct(row.pcts[r])}</td>`;
+      }
+      tbody += "</tr>";
+    }
+    tbody += "</tbody>";
+
+    wrap.innerHTML = `<table>${thead}${tbody}</table>`;
+
+    wrap.querySelector('[data-sortcol="freq"]')?.addEventListener('click', ()=>{
+      const next = wrap.__sortState === 'default' ? 'desc' : wrap.__sortState === 'desc' ? 'asc' : 'default';
+      render(next);
+    });
+  }
+
+  render(sortState);
 }
 
 function renderBreakdownForTypeCompare(ftidOrList){
@@ -5127,6 +5175,12 @@ function initExplorerUI(){
       setMultiMode(!__multiMode);
     });
   }
+
+  // Flop type table frequency sort
+  document.getElementById('flopTypeFreqHeader')?.addEventListener('click', () => {
+    __flopTypeSortDesc = !__flopTypeSortDesc;
+    if (__exploreByRange && __exploreByRange["A"]) renderFlopTypeTable(__exploreByRange["A"]);
+  });
 
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
