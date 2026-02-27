@@ -1176,6 +1176,10 @@ One per line. Commas allowed inside patterns."></textarea>
                 <button type="button" class="btn-xs grn" id="quizMeBtn" disabled title="Quiz yourself on flop frequencies">Quiz Me</button>
               </div>
             </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span class="small" style="opacity:.5; font-size:11px;">Tap to select · <span id="multiSelectHint">shift+tap or</span> <button type="button" id="multiSelectToggle" class="btn-xs" style="font-size:10px; padding:1px 7px; vertical-align:middle;">Multi</button> to add/remove</span>
+              <button type="button" id="clearFlopSelBtn" class="btn-xs" style="font-size:10px; padding:1px 7px; display:none;">Clear</button>
+            </div>
             <table id="flopTypeTable" class="clickable">
               <thead>
                 <tr><th>Flop type</th><th class="num">P(type)</th><th class="num">Samples</th></tr>
@@ -5105,6 +5109,49 @@ function initExplorerUI(){
     if (qBtn)   qBtn.disabled  = false;
   });
 
+  // Multi-select toggle button
+  const multiBtn    = document.getElementById("multiSelectToggle");
+  const clearBtn    = document.getElementById("clearFlopSelBtn");
+  const multiHint   = document.getElementById("multiSelectHint");
+  let   __multiMode = false;
+
+  function setMultiMode(on) {
+    __multiMode = on;
+    if (multiBtn) {
+      multiBtn.textContent = on ? "Multi ✓" : "Multi";
+      multiBtn.style.color = on ? "var(--accent)" : "";
+      multiBtn.style.borderColor = on ? "var(--accent)" : "";
+    }
+    // Hide the "shift+tap or" hint on touch devices once multi mode has been discovered
+    if (on && multiHint && window.matchMedia("(pointer:coarse)").matches) {
+      multiHint.style.display = "none";
+    }
+  }
+
+  function updateClearBtn() {
+    if (!clearBtn) return;
+    const sel = window.__selectedExploreFtids;
+    const isDefault = !sel || (sel.size === 1 && sel.has("any"));
+    clearBtn.style.display = isDefault ? "none" : "";
+  }
+
+  if (multiBtn) {
+    multiBtn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      setMultiMode(!__multiMode);
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      window.__selectedExploreFtids = new Set(["any"]);
+      setMultiMode(false);
+      updateClearBtn();
+      if (__exploreByRange && __exploreByRange["A"]) renderFlopTypeTable(__exploreByRange["A"]);
+      renderBreakdownForTypeCompare(["any"]);
+    });
+  }
+
   body.addEventListener("click", (ev)=>{
     const tr = ev.target?.closest("tr");
     if(!tr || !tr.dataset || !tr.dataset.ftid) return;
@@ -5113,7 +5160,7 @@ function initExplorerUI(){
 
     const sel = window.__selectedExploreFtids;
 
-    if(ev.shiftKey){
+    if(ev.shiftKey || __multiMode){
       if(sel.has(id)) sel.delete(id);
       else sel.add(id);
       if(sel.size===0) sel.add("any");
@@ -5122,6 +5169,7 @@ function initExplorerUI(){
       sel.add(id);
     }
 
+    updateClearBtn();
     if(__exploreByRange && __exploreByRange["A"]){
       renderFlopTypeTable(__exploreByRange["A"]);
     }
