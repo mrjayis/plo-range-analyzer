@@ -1021,7 +1021,10 @@ body:not(.dark) .quiz-tag { background: rgba(0,0,0,.05); border-color: rgba(0,0,
       </div>
 
       <!-- Natural Language → ORS translator -->
-      <div id="nlPanel" style="margin-top:14px; margin-bottom:4px;">
+      <div style="margin-top:10px;">
+        <button type="button" id="nlToggleBtn" class="btn-xs" style="font-size:11px; opacity:.65;">✦ Plain English</button>
+      </div>
+      <div id="nlPanel" style="display:none; margin-top:10px; margin-bottom:4px;">
         <div style="display:flex; gap:8px; align-items:flex-start;">
           <textarea id="nlInput" rows="2" autocomplete="off" placeholder="Describe a range in plain English…" style="flex:1; min-height:52px; resize:vertical;"></textarea>
           <div style="display:flex; flex-direction:column; gap:5px; flex-shrink:0;">
@@ -5577,6 +5580,24 @@ window.addEventListener("DOMContentLoaded", async ()=> {
   const elError      = document.getElementById('nlError');
 
   if (!elBtn) return; // panel not present
+
+  // Toggle visibility
+  const NL_OPEN_KEY = 'plo_nl_open';
+  const nlToggleBtn = document.getElementById('nlToggleBtn');
+  const nlPanel = document.getElementById('nlPanel');
+  function setNlOpen(open) {
+    nlPanel.style.display = open ? '' : 'none';
+    if (nlToggleBtn) {
+      nlToggleBtn.style.opacity = open ? '1' : '.65';
+      nlToggleBtn.textContent = open ? '✦ Plain English ▲' : '✦ Plain English';
+    }
+    localStorage.setItem(NL_OPEN_KEY, open ? '1' : '0');
+  }
+  if (nlToggleBtn) {
+    const wasOpen = localStorage.getItem(NL_OPEN_KEY) === '1';
+    setNlOpen(wasOpen);
+    nlToggleBtn.addEventListener('click', () => setNlOpen(nlPanel.style.display === 'none'));
+  }
 
   // Restore saved key
   const savedKey = localStorage.getItem(KEY_STORE);
