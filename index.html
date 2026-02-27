@@ -2581,7 +2581,7 @@ function analyze(){
 
   const n = parseInt(document.getElementById("game").value,10);
   const weightMode = "as_given";
-  const minWeight = parseFloat(document.getElementById("minWeight").value || "0");
+  const minWeight = parseFloat(document.getElementById("minWeight")?.value || "0");
   const which = (document.getElementById("analyzeWhich")?.value || "A");
   const ta = document.getElementById("range"+which) || document.getElementById("rangeA");
   const text = (ta?.value || "");
