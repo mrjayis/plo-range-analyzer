@@ -1960,7 +1960,8 @@ function handFeatures(cards) {
     vals[1],                          // f1: 2nd card value
     vals[2],                          // f2: 3rd card value
     vals[3],                          // f3: 4th card value
-    counts[0] === 1 ? 0 :             // f4: pair type 0=none,1=pair,2=two-pair,3=trips,4=quads
+    counts[0] === 1 ? 0 :             // f4: pair type 0=none,1=pair,2=two-pair,2.5=three-pair,3=trips,4=quads
+      counts[0] === 2 && counts[1] === 2 && counts[2] === 2 ? 2.5 :
       counts[0] === 2 && counts[1] === 2 ? 2 :
       counts[0] === 2 ? 1 :
       counts[0] === 3 ? 3 : 4,
@@ -2403,6 +2404,7 @@ function analyzeHand(cards){
   if(counts[0]===4) pairType = "Quads";
   else if(counts[0]===3 && counts[1]===2) pairType = "Full house (in hand)";
   else if(counts[0]===3) pairType = "Trips";
+  else if(counts[0]===2 && counts[1]===2 && counts[2]===2) pairType = "Three pair";
   else if(counts[0]===2 && counts[1]===2) pairType = "Two pair";
   else if(counts[0]===2) pairType = "One pair";
 
@@ -2475,6 +2477,7 @@ function analyzeHand(cards){
   if(pairType==="Quads") primary=" (quads)";
   else if(pairType==="Full house (in hand)") primary=" (boat)";
   else if(pairType==="Trips") primary="Trips ()";
+  else if(pairType==="Three pair") primary="Three pair (board-dependent)";
   else if(pairType==="Two pair") primary="Two pair (board-dependent)";
   else if(pairType==="One pair") primary="One pair (pair + draws)";
   else primary="Unpaired (draw-driven)";
