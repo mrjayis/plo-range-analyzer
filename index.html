@@ -1638,7 +1638,7 @@ for (const r of ORS_RANKS) for (const s of ORS_SUITS) ORS_DECK.push(r + s);
 
 // For PLO5/6: C(52,5)=2.6M and C(52,6)=20M combos are too large to enumerate.
 // Use random sampling instead — fast, gives accurate statistics.
-const LARGE_N_SAMPLE = 60000;
+const LARGE_N_SAMPLE = 300000;
 
 function _sampleCombos(n, count) {
   const arr = ORS_DECK.slice(); // mutable copy for partial Fisher-Yates
@@ -2647,7 +2647,7 @@ function analyze(){
   // Append plain-English range description below the parse status
   const desc = describeRange(filtered);
   if (desc) parseMsg.innerHTML += `<br><span class="subtle" style="font-size:12px;">${desc}</span>`;
-  if (n > 4) parseMsg.innerHTML += `<br><span class="subtle" style="font-size:11px; opacity:.6;">PLO${n}: ORS patterns use a ${(60000).toLocaleString()}-combo sample — results are representative, not exhaustive.</span>`;
+  if (n > 4) parseMsg.innerHTML += `<br><span class="subtle" style="font-size:11px; opacity:.6;">PLO${n}: ORS patterns use a ${(300000).toLocaleString()}-combo sample — results are representative, not exhaustive.</span>`;
 
   let totalW = filtered.reduce((s,h)=>s+h.weight,0);
   if(weightMode==="normalize"){
