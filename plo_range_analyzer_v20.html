@@ -1636,9 +1636,32 @@ let _flopMode = false;
 const ORS_DECK = [];
 for (const r of ORS_RANKS) for (const s of ORS_SUITS) ORS_DECK.push(r + s);
 
-// Generate all n-card combos lazily (memoised)
+// For PLO5/6: C(52,5)=2.6M and C(52,6)=20M combos are too large to enumerate.
+// Use random sampling instead — fast, gives accurate statistics.
+const LARGE_N_SAMPLE = 60000;
+
+function _sampleCombos(n, count) {
+  const arr = ORS_DECK.slice(); // mutable copy for partial Fisher-Yates
+  const result = [];
+  const seen = new Set();
+  let attempts = 0;
+  while (result.length < count && attempts < count * 4) {
+    attempts++;
+    for (let i = 0; i < n; i++) {
+      const j = i + Math.floor(Math.random() * (arr.length - i));
+      const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    const hand = arr.slice(0, n).sort();
+    const key = hand.join(',');
+    if (!seen.has(key)) { seen.add(key); result.push(hand); }
+  }
+  return result;
+}
+
+// Generate all n-card combos lazily (memoised). For n>4 uses sampling.
 const _comboCache = {};
 function getAllCombos(n) {
+  if (n > 4) return _sampleCombos(n, LARGE_N_SAMPLE); // never cache — results are random
   if (_comboCache[n]) return _comboCache[n];
   const result = [];
   function go(start, cur) {
@@ -2624,6 +2647,7 @@ function analyze(){
   // Append plain-English range description below the parse status
   const desc = describeRange(filtered);
   if (desc) parseMsg.innerHTML += `<br><span class="subtle" style="font-size:12px;">${desc}</span>`;
+  if (n > 4) parseMsg.innerHTML += `<br><span class="subtle" style="font-size:11px; opacity:.6;">PLO${n}: ORS patterns use a ${(60000).toLocaleString()}-combo sample — results are representative, not exhaustive.</span>`;
 
   let totalW = filtered.reduce((s,h)=>s+h.weight,0);
   if(weightMode==="normalize"){
