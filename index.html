@@ -103,7 +103,7 @@ body:not(.dark) .cardchip{ background:rgba(0,0,0,.06) !important; border-color:r
 }
 
 .miniChipline{ display:inline-flex; gap:4px; align-items:center; margin-right:10px; vertical-align:middle; }
-.cardchip.mini{ width:22px; height:26px; border-radius:9px; font-size:12px; }
+.cardchip.mini{ font-size:14px; padding:2px 5px; border-radius:6px; }
 
 .chartCard{ padding:12px; }
 canvas.chart{ width:100%; height:220px; border-radius:14px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); }
@@ -551,26 +551,36 @@ textarea {
 
 /* --- Playing card chips ----------------------------------- */
 .cardchip {
-  width: 26px !important;
-  height: 34px !important;
-  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  padding: 3px 7px !important;
+  margin: 0 1px !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 8px !important;
   border: 1px solid var(--chipBorder) !important;
   background: var(--chipBg) !important;
-  font-weight: 900 !important;
-  font-size: 14px !important;
-  box-shadow:
-    0 1px 4px rgba(0,0,0,.18),
-    inset 0 1px 0 rgba(255,255,255,.45) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.3px !important;
+  font-size: 20px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3) !important;
 }
 body.dark .cardchip {
-  box-shadow:
-    0 1px 5px rgba(0,0,0,.45),
-    inset 0 1px 0 rgba(255,255,255,.07) !important;
+  background: #112034 !important;
+  border-color: #263f5c !important;
+  box-shadow: 0 1px 5px rgba(0,0,0,.5) !important;
+}
+.cardchip .sym {
+  font-size: 16px !important;
+  opacity: 0.95 !important;
 }
 .cardchip.mini {
-  width: 20px !important;
-  height: 26px !important;
-  border-radius: 5px !important;
+  font-size: 14px !important;
+  padding: 2px 5px !important;
+  border-radius: 6px !important;
+}
+.cardchip.mini .sym {
   font-size: 11px !important;
 }
 .handrow {
@@ -2743,6 +2753,7 @@ let __lastTotalW = 1;
 let __simStats = null;
 
 function suitClass(s){ return "suit-" + s; }
+const SUIT_SYMS = {s:'♠', h:'♥', d:'♦', c:'♣'};
 
 function renderHandChips(cards){
   const suitOrd = {s:0,h:1,d:2,c:3};
@@ -2755,7 +2766,7 @@ function renderHandChips(cards){
   return sorted.map(c=>{
     const r = c[0].toUpperCase();
     const s = c[1].toLowerCase();
-    return `<span class="cardchip ${suitClass(s)}">${escapeHtml(r)}${escapeHtml(s)}</span>`;
+    return `<span class="cardchip ${suitClass(s)}">${escapeHtml(r)}<span class="sym">${SUIT_SYMS[s]||s}</span></span>`;
   }).join("");
 }
 
@@ -2777,7 +2788,7 @@ function renderMiniChips(cards){
   return `<span class="miniChipline">` + cards.map(c=>{
     const r = c[0].toUpperCase();
     const s = c[1].toLowerCase();
-    return `<span class="cardchip mini ${suitClass(s)}">${escapeHtml(r)}${escapeHtml(s)}</span>`;
+    return `<span class="cardchip mini ${suitClass(s)}">${escapeHtml(r)}<span class="sym">${SUIT_SYMS[s]||s}</span></span>`;
   }).join("") + `</span>`;
 }
 
