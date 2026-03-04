@@ -4230,7 +4230,17 @@ async function computeEquityBucketsForSelection(){
   if(blocks.length===0){
     out.textContent = "No results (check ranges / filters).";
   }else{
-    out.innerHTML = blocks.join("");
+    const catalog = flopTypesCatalog();
+    let filterLabel;
+    if(useSpec && forcedFlops && forcedFlops.length){
+      filterLabel = `Specific flops (${forcedFlops.length})`;
+    } else if(!filterIds.length || (filterIds.length===1 && filterIds[0]==="any")){
+      filterLabel = "Any flop";
+    } else {
+      filterLabel = filterIds.map(id => catalog.find(t=>t.id===id)?.label || id).join(" + ");
+    }
+    const filterBar = `<div style="margin-bottom:8px; font-size:11px; color:var(--muted);">Flop filter: <strong style="color:var(--text)">${escapeHtml(filterLabel)}</strong></div>`;
+    out.innerHTML = filterBar + blocks.join("");
   }
 
   hideProgress();
