@@ -835,16 +835,13 @@ body:not(.dark) .slot-current-name {
 }
 
 /* --- Side-by-side layouts --------------------------------- */
-/* Equity bucket blocks: flex row */
+/* Equity bucket blocks: stacked rows */
 #bucketResults {
   display: flex !important;
+  flex-direction: column !important;
   gap: 14px !important;
-  align-items: flex-start !important;
-  flex-wrap: wrap !important;
 }
 #bucketResults .eq-bucket-block {
-  flex: 1 !important;
-  min-width: 200px !important;
   margin-top: 0 !important;
 }
 /* Made hands / Draws tables: flex row */
