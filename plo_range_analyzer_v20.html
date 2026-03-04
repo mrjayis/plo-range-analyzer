@@ -1216,6 +1216,7 @@ body:not(.dark) .quiz-tag { background: rgba(0,0,0,.05); border-color: rgba(0,0,
               <div class="row" style="justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;">
                 <div>
                   <div class="small" style="margin-bottom:4px;">Equity buckets vs Range B <span title="Samples hero combos from the selected range vs villain combos from Range B, running Monte Carlo turn+river runouts on flops matching the current filter." style="cursor:help; opacity:.5;">ℹ</span></div>
+                  <div id="bucketFlopFilter" style="font-size:11px; color:var(--muted);"></div>
                 </div>
                 <div class="row" style="gap:10px; align-items:flex-end;">
                   <div style="min-width:160px;">
@@ -4227,20 +4228,22 @@ async function computeEquityBucketsForSelection(){
       </div>
     `);
   }
+  const catalog = flopTypesCatalog();
+  let filterLabel;
+  if(useSpec && forcedFlops && forcedFlops.length){
+    filterLabel = `Specific flops (${forcedFlops.length})`;
+  } else if(!filterIds.length || (filterIds.length===1 && filterIds[0]==="any")){
+    filterLabel = "Any flop";
+  } else {
+    filterLabel = filterIds.map(id => catalog.find(t=>t.id===id)?.label || id).join(" + ");
+  }
+  const filterEl = document.getElementById("bucketFlopFilter");
+  if(filterEl) filterEl.innerHTML = `Flop filter: <strong style="color:var(--text)">${escapeHtml(filterLabel)}</strong>`;
+
   if(blocks.length===0){
     out.textContent = "No results (check ranges / filters).";
   }else{
-    const catalog = flopTypesCatalog();
-    let filterLabel;
-    if(useSpec && forcedFlops && forcedFlops.length){
-      filterLabel = `Specific flops (${forcedFlops.length})`;
-    } else if(!filterIds.length || (filterIds.length===1 && filterIds[0]==="any")){
-      filterLabel = "Any flop";
-    } else {
-      filterLabel = filterIds.map(id => catalog.find(t=>t.id===id)?.label || id).join(" + ");
-    }
-    const filterBar = `<div style="margin-bottom:8px; font-size:11px; color:var(--muted);">Flop filter: <strong style="color:var(--text)">${escapeHtml(filterLabel)}</strong></div>`;
-    out.innerHTML = filterBar + blocks.join("");
+    out.innerHTML = blocks.join("");
   }
 
   hideProgress();
