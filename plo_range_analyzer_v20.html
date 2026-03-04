@@ -2053,11 +2053,12 @@ function applyMods(set, mods) {
     const rc = {}; for (const c of cards) rc[c[0]] = (rc[c[0]]||0) + 1;
     const rv = Object.values(rc).sort((a,b) => b-a);
     let ok = true;
+    const pairedSuits = sv.filter(v => v >= 2).length;
     for (const mod of mods) {
-      if (mod === 'ds' && !(sv.length === 2 && sv[0] === 2)) { ok = false; break; }
-      if (mod === 'ss' && !(sv.length === 3 && sv[0] === 2)) { ok = false; break; }
-      if (mod === 'np' && rv[0] !== 1)  { ok = false; break; }
-      if (mod === 'nt' && rv[0] >= 3)   { ok = false; break; }
+      if (mod === 'ds' && pairedSuits < 2)   { ok = false; break; }
+      if (mod === 'ss' && pairedSuits !== 1) { ok = false; break; }
+      if (mod === 'np' && rv[0] !== 1)       { ok = false; break; }
+      if (mod === 'nt' && rv[0] >= 3)        { ok = false; break; }
     }
     if (ok) result.add(key);
   }
