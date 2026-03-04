@@ -4002,8 +4002,8 @@ async function computeEquityBucketsForSelection(){
     out.textContent = "Run Explorer first.";
     return;
   }
-  const villHands = __exploreHandsByRange["B"];
-  if(!villHands || villHands.length===0){
+  const villHandsB = __exploreHandsByRange["B"];
+  if(!villHandsB || villHandsB.length===0){
     out.innerHTML = `<div class="small">Range B is required for equity buckets. Enable/enter Range B and re-run Explorer.</div>`;
     return;
   }
@@ -4026,15 +4026,24 @@ async function computeEquityBucketsForSelection(){
   const cacheKeyBase = JSON.stringify({game:snap.game, rangeA:snap.A, rangeB:snap.B, rangeC:snap.C, filterIds, useSpec, forcedFlops: forcedFlops ? forcedFlops.flat() : null});
   const resultsByHero = {};
 
+  const computePairs = heroKeys
+    .filter(k => __exploreHandsByRange[k]?.length)
+    .map(k => ({heroKey:k, villKey:"B", heroHands:__exploreHandsByRange[k], villHands:villHandsB}));
+  if(heroKeys.includes("A") && heroKeys.includes("C") &&
+     __exploreHandsByRange["A"]?.length && __exploreHandsByRange["C"]?.length){
+    computePairs.push({heroKey:"A", villKey:"C", heroHands:__exploreHandsByRange["A"], villHands:__exploreHandsByRange["C"]});
+  }
+
   setStatus("running...");
 
   const fullDeck = buildFullDeck();
 
-  for(const heroKey of heroKeys){
-    const heroHands = __exploreHandsByRange[heroKey];
-    if(!heroHands || heroHands.length===0) continue;
+  for(const pair of computePairs){
+    const {heroKey, villKey} = pair;
+    const heroHands = pair.heroHands;
+    const villHands = pair.villHands;
 
-    const cacheKey = heroKey + "|" + cacheKeyBase;
+    const cacheKey = heroKey + "_vs_" + villKey + "|" + cacheKeyBase;
     const existing = __bucketCache.get(cacheKey) || null;
 
     const prevSamples       = existing ? existing.usedSamples : 0;
@@ -4044,13 +4053,13 @@ async function computeEquityBucketsForSelection(){
 
     if(additionalSamples > 0){
       const rngSeed = _rand32();
-      setProgress(`Range ${heroKey}: dispatching ${additionalSamples.toLocaleString()} samples…`, 0);
+      setProgress(`Range ${heroKey} vs ${villKey}: dispatching ${additionalSamples.toLocaleString()} samples…`, 0);
       await new Promise(r => setTimeout(r, 0));
 
       const partial = await runBucketSamplesParallel(
         heroHands, villHands, additionalSamples, runouts,
         forcedFlops, filterIds, rngSeed,
-        (pct) => setProgress(`Range ${heroKey}: computing ${additionalSamples.toLocaleString()} samples…`, pct)
+        (pct) => setProgress(`Range ${heroKey} vs ${villKey}: computing ${additionalSamples.toLocaleString()} samples…`, pct)
       );
 
       if(partial){
@@ -4121,7 +4130,7 @@ async function computeEquityBucketsForSelection(){
           const eq = (wins + ties*0.5) / runouts;
           sumEq += eq; usedSamples++;
           if(usedSamples % 50 === 0){
-            setProgress(`Range ${heroKey}: +${usedSamples} / ${samples}  (${(prevSamples+usedSamples).toLocaleString()} total)`, usedSamples/samples);
+            setProgress(`Range ${heroKey} vs ${villKey}: +${usedSamples} / ${samples}  (${(prevSamples+usedSamples).toLocaleString()} total)`, usedSamples/samples);
             await new Promise(r => setTimeout(r, 0));
           }
           if(eq>=0.75) nNut++;
@@ -4145,7 +4154,7 @@ async function computeEquityBucketsForSelection(){
     }
 
     const totalSamples = prevSamples + usedSamples;
-    setProgress(`Range ${heroKey}: done  (${totalSamples.toLocaleString()} samples)`, 1);
+    setProgress(`Range ${heroKey} vs ${villKey}: done  (${totalSamples.toLocaleString()} samples)`, 1);
     await new Promise(r => setTimeout(r, 0));
 
     const res = {
@@ -4165,7 +4174,7 @@ async function computeEquityBucketsForSelection(){
       _sumEq: sumEq
     };
     __bucketCache.set(cacheKey, res);
-    resultsByHero[heroKey] = res;
+    resultsByHero[heroKey + "_vs_" + villKey] = res;
   }
 
   const BUCKET_CFG = [
@@ -4176,8 +4185,8 @@ async function computeEquityBucketsForSelection(){
   ];
 
   const blocks = [];
-  for(const heroKey of heroKeys){
-    const r = resultsByHero[heroKey];
+  for(const {heroKey, villKey} of computePairs){
+    const r = resultsByHero[heroKey + "_vs_" + villKey];
     if(!r) continue;
 
     const rowsHtml = BUCKET_CFG.map(cfg => {
@@ -4210,7 +4219,7 @@ async function computeEquityBucketsForSelection(){
     blocks.push(`
       <div class="eq-bucket-block">
         <div class="eq-bucket-header">
-          <span><strong>${escapeHtml(heroKey)}</strong> vs <strong>B</strong></span>
+          <span><strong>${escapeHtml(heroKey)}</strong> vs <strong>${escapeHtml(villKey)}</strong></span>
           <span class="subtle small">${(r.usedSamples||0).toLocaleString()} samples</span>
         </div>
         <div class="eq-equity-summary">
@@ -4218,7 +4227,7 @@ async function computeEquityBucketsForSelection(){
           <div class="eq-es-val hero" style="color:${eqColor}">${heroEq}%</div>
           <div class="eq-es-bar"><div class="eq-es-fill" style="width:${heroEq}%; background:${eqColor};"></div></div>
           <div class="eq-es-val vill">${villEq}%</div>
-          <div class="eq-es-label">Range B</div>
+          <div class="eq-es-label">Range ${escapeHtml(villKey)}</div>
         </div>
         <div class="eq-bucket-legend">
           <span style="color:var(--muted); font-size:10px;">HERO</span>
