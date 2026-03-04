@@ -4002,17 +4002,7 @@ async function computeMultiwayBucketSamples(handsArr, samples, runouts, forcedFl
     handsArr, samples, runouts, forcedFlops, filterIds, rngSeed,
     pct => { if(progressCb) progressCb(pct); }
   );
-  if(parallel){
-    const { counters, usedSamples } = parallel;
-    return counters.map(c => ({
-      avgEq:  usedSamples > 0 ? c.sumEq / usedSamples : 0,
-      nut:    usedSamples > 0 ? c.nNut  / usedSamples : 0,
-      good:   usedSamples > 0 ? c.nGood / usedSamples : 0,
-      marg:   usedSamples > 0 ? c.nMarg / usedSamples : 0,
-      trash:  usedSamples > 0 ? c.nTrash/ usedSamples : 0,
-      usedSamples,
-    }));
-  }
+  if(parallel) return parallel; // { counters, usedSamples } — raw
 
   // Fallback: single-threaded
   const fullDeck = buildFullDeck();
@@ -4075,14 +4065,7 @@ async function computeMultiwayBucketSamples(handsArr, samples, runouts, forcedFl
       await new Promise(r => setTimeout(r, 0));
     }
   }
-  return counters.map(c => ({
-    avgEq:  usedSamples > 0 ? c.sumEq / usedSamples : 0,
-    nut:    usedSamples > 0 ? c.nNut  / usedSamples : 0,
-    good:   usedSamples > 0 ? c.nGood / usedSamples : 0,
-    marg:   usedSamples > 0 ? c.nMarg / usedSamples : 0,
-    trash:  usedSamples > 0 ? c.nTrash/ usedSamples : 0,
-    usedSamples,
-  }));
+  return { counters, usedSamples }; // raw — caller normalizes
 }
 
 async function computeEquityBucketsForSelection(){
@@ -4135,7 +4118,7 @@ async function computeEquityBucketsForSelection(){
   setProgress(`Computing ${samples.toLocaleString()} multiway samples…`, 0);
   await new Promise(r => setTimeout(r, 0));
 
-  const results = await computeMultiwayBucketSamples(
+  const raw = await computeMultiwayBucketSamples(
     activeHands, samples, runouts, forcedFlops, filterIds,
     pct => setProgress(`Computing ${samples.toLocaleString()} samples…`, pct)
   );
@@ -4153,8 +4136,33 @@ async function computeEquityBucketsForSelection(){
   const filterEl = document.getElementById("bucketFlopFilter");
   if(filterEl) filterEl.innerHTML = `Flop filter: <strong style="color:var(--text)">${escapeHtml(filterLabel)}</strong>`;
 
+  // ─── Accumulate ──────────────────────────────────────────────────────────
+  const contextKey = activeKeys.join('|') + '|' + filterLabel;
+  if(__bucketAccum && __bucketAccum.contextKey === contextKey){
+    for(let i = 0; i < raw.counters.length; i++){
+      __bucketAccum.counters[i].nNut   += raw.counters[i].nNut;
+      __bucketAccum.counters[i].nGood  += raw.counters[i].nGood;
+      __bucketAccum.counters[i].nMarg  += raw.counters[i].nMarg;
+      __bucketAccum.counters[i].nTrash += raw.counters[i].nTrash;
+      __bucketAccum.counters[i].sumEq  += raw.counters[i].sumEq;
+    }
+    __bucketAccum.usedSamples += raw.usedSamples;
+  } else {
+    __bucketAccum = { contextKey, counters: raw.counters.map(c => ({...c})), usedSamples: raw.usedSamples };
+  }
+  const acc = __bucketAccum;
+
+  // ─── Normalize ───────────────────────────────────────────────────────────
+  const usedSamples = acc.usedSamples;
+  const results = acc.counters.map(c => ({
+    avgEq: usedSamples > 0 ? c.sumEq  / usedSamples : 0,
+    nut:   usedSamples > 0 ? c.nNut   / usedSamples : 0,
+    good:  usedSamples > 0 ? c.nGood  / usedSamples : 0,
+    marg:  usedSamples > 0 ? c.nMarg  / usedSamples : 0,
+    trash: usedSamples > 0 ? c.nTrash / usedSamples : 0,
+  }));
+
   // ─── Render ──────────────────────────────────────────────────────────────
-  const usedSamples = results[0]?.usedSamples || 0;
   if(!usedSamples){
     out.textContent = "No results — check ranges and flop filter.";
     hideProgress(); setStatus("error"); return;
@@ -4808,6 +4816,7 @@ function mergeMultiwayBucketResults(parts){
 }
 
 let __flopTypeSortDesc = false; // false = catalog order, true = sort by freq desc
+let __bucketAccum = null; // { contextKey, counters, usedSamples } — accumulated raw counts across runs
 
 function renderFlopTypeTable(explore){
   const body = document.getElementById("flopTypeBody");
@@ -5265,6 +5274,7 @@ function initExplorerUI(){
     __exploreByRange = byRange;
     __exploreRanges = rangeKeys.filter(k=>byRange[k]);
     __exploreHandsByRange = handsByRange;
+    __bucketAccum = null; // reset accumulated buckets when explorer re-runs
 
     window.__selectedExploreFtids = new Set(["any"]);
     renderFlopTypeTable(byRange["A"]);
