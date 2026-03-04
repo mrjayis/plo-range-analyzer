@@ -2530,7 +2530,7 @@ function renderTable(tbody, rows, total){
   }
 }
 
-function describeRange(hands) {
+function describeRange(hands, n = 4) {
   if (!hands || hands.length === 0) return '';
   const totalW = hands.reduce((s, h) => s + h.weight, 0);
   if (totalW === 0) return '';
@@ -2617,7 +2617,11 @@ function describeRange(hands) {
   if (bwayP >= 70)     rankStr += (rankStr ? ' · ' : '') + `${bwayP}% 3+ broadway`;
 
   const parts = [suitStr, pairStr, connStr, rankStr].filter(Boolean);
-  return `<span class="ok">${comboCount.toLocaleString()} combos</span> &nbsp;·&nbsp; ${parts.join(' &nbsp;·&nbsp; ')}`;
+  const universeSize = n === 4 ? nCk(52, 4) : 300000;
+  const rawPct = comboCount / universeSize * 100;
+  const pctFmt = rawPct < 0.01 ? '<0.01' : rawPct.toFixed(rawPct < 1 ? 2 : 1);
+  const pctStr = (n > 4 ? '~' : '') + pctFmt + '%';
+  return `<span class="ok">${comboCount.toLocaleString()} combos (${pctStr} of all PLO${n} hands)</span> &nbsp;·&nbsp; ${parts.join(' &nbsp;·&nbsp; ')}`;
 }
 
 function analyze(){
@@ -2661,7 +2665,7 @@ function analyze(){
   }
 
   // Append plain-English range description below the parse status
-  const desc = describeRange(filtered);
+  const desc = describeRange(filtered, n);
   if (desc) parseMsg.innerHTML += `<br><span class="subtle" style="font-size:12px;">${desc}</span>`;
   if (n > 4) parseMsg.innerHTML += `<br><span class="subtle" style="font-size:11px; opacity:.6;">PLO${n}: ORS patterns use a ${(300000).toLocaleString()}-combo sample — results are representative, not exhaustive.</span>`;
 
