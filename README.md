@@ -1,30 +1,43 @@
 # PLO Range Analyzer
 
-A single-file, standalone browser app for Pot Limit Omaha hand range analysis, flop equity exploration, and frequency quizzing.
+A single-file, standalone browser app for Pot Limit Omaha hand range analysis, flop equity exploration, and frequency quizzing. Supports PLO4, PLO5, and PLO6.
 
-No install. No server. Open `plo_range_analyzer_v15.html` in any browser.
+**[Live app →](https://mrjayis.github.io/plo-range-analyzer/)**
+
+No install. No server. Download and open in any browser.
 
 ---
 
 ## Features
 
 ### Range Analysis
-- Parse and analyze PLO hand ranges using explicit combos or ORS (Omaha Range Syntax)
+- Parse and analyze PLO4/5/6 hand ranges using explicit combos or ORS (Omaha Range Syntax)
 - Side-by-side comparison of up to 3 ranges (A / B / C)
 - Breakdowns by suitedness, connectivity, pairing, and high-card strength
+- Range size displayed as a percentage of all possible hands (exact for PLO4, approximate for PLO5/6)
+- Plain-English range description (combo count, suitedness %, pairing %, connectivity %)
 - Save and load ranges via a built-in library (IndexedDB)
+- Natural language → ORS translator powered by Claude AI (API key required)
 
 ### Flop Explorer
-- Monte Carlo simulation across all flop types
-- Tracks made hands (two pair, set, flush, straight, full house, etc.) and draws (flush draw, OESD, gutshot) for each range on each flop type
-- Supports flop type filters (monotone, two-tone, rainbow, paired, trips, low, broadway, connected)
-- Specific flop syntax: enter explicit boards (`As Kd 7c`) or ORS flop patterns (`RRO`, `A**!AA*`, `[T+][T+][T+]`, `234+`) to constrain sampling
+- Monte Carlo simulation across all flop types for up to 3 ranges simultaneously
+- Tracks made hands (two pair, set, flush, straight, full house, etc.) and draws (flush draw, OESD, gutshot, etc.) per range per flop type
+- Flop type catalog: Any, Monotone, Two-tone, Rainbow, Paired, Unpaired, Trips, Low, 2-broadway, 3-broadway, High-connected, Low-connected
+- Flop types with the largest frequency gap between ranges are highlighted automatically
+- Specific flop syntax: enter explicit boards (`As Kd 7c`) or ORS flop patterns to constrain sampling
 - Parallel web worker execution for fast simulation
+
+### Multiway Equity Buckets
+- True N-way equity computation (not pairwise) — all active ranges compete simultaneously
+- Buckets: Nut (≥75%), Good (40–75%), Marginal (33–40%), Trash (<33%)
+- Results accumulate across repeated runs for higher sample counts
+- Filterable by flop type or specific boards
+- Parallelised across web workers
 
 ### Quiz Mode
 - Generates questions from your own explorer results
 - Questions weighted by flop frequency — common boards appear more often
-- Filters out meaningless question combinations (e.g. flush draws on rainbow flops, straight draws on suit-only flops)
+- Filters out invalid question combinations (e.g. flush draws on rainbow flops)
 - Configurable tolerance (±3% / ±5% / ±10%)
 - Score tracking per session
 
@@ -41,7 +54,8 @@ Ranges can be entered as explicit combos or as ORS expressions:
 |--------|---------|
 | `AsKsQhJh@100` | Explicit combo with weight |
 | `AA**` | Any hand with a pair of aces |
-| `*h*h**` | Any hand with a flush draw |
+| `*h*h**` | Any two-suited hand |
+| `AA**$ds` | Double-suited aces |
 | `B` | Broadway card (A/K/Q/J) |
 | `M` | Middle card (T/9/8/7) |
 | `N` | Near-broadway (K/Q/J/T/9) |
@@ -72,16 +86,17 @@ Everything lives in one HTML file — no build step, no dependencies, no server.
 - **Parser:** Recursive descent ORS parser with set operations (union `,`, difference `!`, intersection `&`)
 - **Hand analysis:** Pure functions classify suitedness, connectivity, pairing, and rank strength
 - **Simulation:** Seeded Mulberry32 PRNG, parallelised across Web Workers
-- **Persistence:** IndexedDB for saved ranges; `localStorage` for theme preference
+- **Persistence:** IndexedDB for saved ranges; `localStorage` for theme and UI state
 - **Charts:** Canvas 2D API
 
 ---
 
 ## Usage
 
-1. Download `plo_range_analyzer_v15.html`
-2. Open it in Chrome, Firefox, or Safari
+1. Download `plo_range_analyzer_v22.html` (or use the [live app](https://mrjayis.github.io/plo-range-analyzer/))
+2. Open in Chrome, Firefox, or Safari
 3. Paste a range into slot A (explicit combos or ORS syntax)
 4. Click **Analyze Range** for hand breakdowns
-5. Click **Run Explorer** for flop equity simulation
-6. Click **Quiz Me** to test yourself on the results
+5. Add ranges B and/or C, then click **Run Explorer** for flop simulation
+6. Click **Run Buckets** for multiway equity distribution
+7. Click **Quiz Me** to test yourself on the results
