@@ -897,6 +897,21 @@ body:not(.dark) .quiz-tag { background: rgba(0,0,0,.05); border-color: rgba(0,0,
 }
 .quiz-input:focus { outline: none; border-color: var(--accent); }
 .quiz-pct { font-size: 18px; font-weight: 700; color: var(--muted); }
+
+/* ── Multiway equity bucket chart ── */
+.mwb-block { margin-top: 4px; }
+.mwb-meta { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.mwb-grid { display: flex; flex-direction: column; gap: 8px; }
+.mwb-row { display: grid; grid-template-columns: 60px 48px 1fr; align-items: center; gap: 10px; }
+.mwb-range-label { font-size: 13px; font-weight: 700; }
+.mwb-avg-eq { font-size: 13px; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+.mwb-bar-wrap { display: flex; flex-direction: column; gap: 3px; }
+.mwb-bar-stacked { display: flex; height: 14px; border-radius: 5px; overflow: hidden; background: rgba(255,255,255,.07); }
+body:not(.dark) .mwb-bar-stacked { background: rgba(0,0,0,.07); }
+.mwb-seg { height: 100%; transition: width .4s cubic-bezier(.4,0,.2,1); min-width: 0; }
+.mwb-pct-row { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; padding: 0 1px; }
+.mwb-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; font-size: 11px; color: var(--muted); }
+.mwb-swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 3px; vertical-align: middle; }
 </style>
 </head>
 <body class="dark">
@@ -3978,6 +3993,78 @@ function __randomSample2(arr, rng){
   return [arr[a], arr[b]];
 }
 
+async function computeMultiwayBucketSamples(handsArr, samples, runouts, forcedFlops, filterIds, progressCb) {
+  const nRanges = handsArr.length;
+  const fullDeck = buildFullDeck();
+  const rng = Math.random;
+  const samplers = handsArr.map(h => __buildSampler(h, rng));
+  const counters = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nTrash:0, sumEq:0}));
+  let usedSamples = 0, attempts = 0;
+  while (usedSamples < samples && attempts < samples * 100) {
+    attempts++;
+    const hands = handsArr.map((h, i) => h[samplers[i].sampleIndex()].cards);
+    const usedCards = new Set();
+    let overlap = false;
+    for (const h of hands) {
+      for (const c of h) {
+        if (usedCards.has(c)) { overlap = true; break; }
+        usedCards.add(c);
+      }
+      if (overlap) break;
+    }
+    if (overlap) continue;
+    const rem0 = fullDeck.filter(c => !usedCards.has(c));
+    if (rem0.length < 5) continue;
+    let flop = null;
+    if (forcedFlops && forcedFlops.length) {
+      const fi = Math.floor(rng() * forcedFlops.length);
+      flop = forcedFlops[fi];
+      if (flop.some(c => usedCards.has(c))) continue;
+    } else {
+      for (let tries = 0; tries < 400; tries++) {
+        const f3 = __randomSample3(rem0, rng);
+        if (__flopMatchesFilter(f3, filterIds)) { flop = f3; break; }
+      }
+      if (!flop) continue;
+    }
+    const usedCards2 = new Set([...usedCards, ...flop]);
+    const rem = fullDeck.filter(c => !usedCards2.has(c));
+    if (rem.length < 2) continue;
+    const winEqs = new Array(nRanges).fill(0);
+    for (let r = 0; r < runouts; r++) {
+      const [t1, t2] = __randomSample2(rem, rng);
+      const board5 = [flop[0], flop[1], flop[2], t1, t2];
+      const ranks = hands.map(h => __bestPLOHandRank(h, board5));
+      let best = ranks[0];
+      for (let i = 1; i < nRanges; i++) if (__cmpRank(ranks[i], best) > 0) best = ranks[i];
+      const isBest = ranks.map(rank => __cmpRank(rank, best) === 0);
+      const nWinners = isBest.filter(Boolean).length;
+      for (let i = 0; i < nRanges; i++) if (isBest[i]) winEqs[i] += 1 / nWinners;
+    }
+    for (let i = 0; i < nRanges; i++) {
+      const eq = winEqs[i] / runouts;
+      counters[i].sumEq += eq;
+      if      (eq >= 0.75) counters[i].nNut++;
+      else if (eq >= 0.40) counters[i].nGood++;
+      else if (eq >= 0.33) counters[i].nMarg++;
+      else                 counters[i].nTrash++;
+    }
+    usedSamples++;
+    if (usedSamples % 50 === 0) {
+      if (progressCb) progressCb(usedSamples / samples);
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+  return counters.map(c => ({
+    avgEq:  usedSamples > 0 ? c.sumEq / usedSamples : 0,
+    nut:    usedSamples > 0 ? c.nNut  / usedSamples : 0,
+    good:   usedSamples > 0 ? c.nGood / usedSamples : 0,
+    marg:   usedSamples > 0 ? c.nMarg / usedSamples : 0,
+    trash:  usedSamples > 0 ? c.nTrash/ usedSamples : 0,
+    usedSamples,
+  }));
+}
+
 async function computeEquityBucketsForSelection(){
   const statusPill = document.getElementById("bucketStatus");
   const statusText = document.getElementById("bucketStatusText");
@@ -4003,12 +4090,6 @@ async function computeEquityBucketsForSelection(){
     out.textContent = "Run Explorer first.";
     return;
   }
-  const villHandsB = __exploreHandsByRange["B"];
-  if(!villHandsB || villHandsB.length===0){
-    out.innerHTML = `<div class="small">Range B is required for equity buckets. Enable/enter Range B and re-run Explorer.</div>`;
-    return;
-  }
-
   const filterIds = __selectedFilterIds();
   const useSpec = !!document.getElementById("useSpecificFlops")?.checked;
   const forcedFlops = useSpec ? __parseSpecificFlops(document.getElementById("specificFlops")?.value) : null;
@@ -4017,227 +4098,29 @@ async function computeEquityBucketsForSelection(){
     return;
   }
 
+  const activeKeys = (__exploreRanges||[]).filter(k => (__exploreHandsByRange[k]||[]).length > 0);
+  if(activeKeys.length < 2){
+    out.innerHTML = `<div class="small">Run Explorer with at least 2 ranges to compute equity buckets.</div>`;
+    return;
+  }
+
   const snap = currentRangesSnapshot();
-  const rng = Math.random;
 
   const samples = Math.max(200, parseInt(document.getElementById("bucketSamples")?.value || "1500",10) || 1500);
   const runouts = Math.max(10, parseInt(document.getElementById("bucketRunouts")?.value || "60",10) || 60);
-
-  const heroKeys = __exploreRanges.filter(k=>k!=="B");
-  const cacheKeyBase = JSON.stringify({game:snap.game, rangeA:snap.A, rangeB:snap.B, rangeC:snap.C, filterIds, useSpec, forcedFlops: forcedFlops ? forcedFlops.flat() : null});
-  const resultsByHero = {};
-
-  const computePairs = heroKeys
-    .filter(k => __exploreHandsByRange[k]?.length)
-    .map(k => ({heroKey:k, villKey:"B", heroHands:__exploreHandsByRange[k], villHands:villHandsB}));
-  if(heroKeys.includes("A") && heroKeys.includes("C") &&
-     __exploreHandsByRange["A"]?.length && __exploreHandsByRange["C"]?.length){
-    computePairs.push({heroKey:"A", villKey:"C", heroHands:__exploreHandsByRange["A"], villHands:__exploreHandsByRange["C"]});
-  }
+  const activeHands = activeKeys.map(k => __exploreHandsByRange[k]);
 
   setStatus("running...");
 
-  const fullDeck = buildFullDeck();
+  setProgress(`Computing ${samples.toLocaleString()} multiway samples…`, 0);
+  await new Promise(r => setTimeout(r, 0));
 
-  for(const pair of computePairs){
-    const {heroKey, villKey} = pair;
-    const heroHands = pair.heroHands;
-    const villHands = pair.villHands;
+  const results = await computeMultiwayBucketSamples(
+    activeHands, samples, runouts, forcedFlops, filterIds,
+    pct => setProgress(`Computing ${samples.toLocaleString()} samples…`, pct)
+  );
 
-    const cacheKey = heroKey + "_vs_" + villKey + "|" + cacheKeyBase;
-    const existing = __bucketCache.get(cacheKey) || null;
-
-    const prevSamples       = existing ? existing.usedSamples : 0;
-    const additionalSamples = samples; // always add fresh samples each click
-
-    let nNut, nGood, nMarg, nTrash, vNut, vGood, vMarg, vTrash, sumEq, usedSamples;
-
-    if(additionalSamples > 0){
-      const rngSeed = _rand32();
-      setProgress(`Range ${heroKey} vs ${villKey}: dispatching ${additionalSamples.toLocaleString()} samples…`, 0);
-      await new Promise(r => setTimeout(r, 0));
-
-      const partial = await runBucketSamplesParallel(
-        heroHands, villHands, additionalSamples, runouts,
-        forcedFlops, filterIds, rngSeed,
-        (pct) => setProgress(`Range ${heroKey} vs ${villKey}: computing ${additionalSamples.toLocaleString()} samples…`, pct)
-      );
-
-      if(partial){
-        // ── Parallel path ──────────────────────────────────────────
-        nNut   = (existing?existing._nNut  :0) + partial.nNut;
-        nGood  = (existing?existing._nGood :0) + partial.nGood;
-        nMarg  = (existing?existing._nMarg :0) + partial.nMarg;
-        nTrash = (existing?existing._nTrash:0) + partial.nTrash;
-        vNut   = (existing?existing._vNut  :0) + partial.vNut;
-        vGood  = (existing?existing._vGood :0) + partial.vGood;
-        vMarg  = (existing?existing._vMarg :0) + partial.vMarg;
-        vTrash = (existing?existing._vTrash:0) + partial.vTrash;
-        sumEq  = (existing?existing._sumEq :0) + partial.sumEq;
-        usedSamples = partial.usedSamples;
-      } else {
-        // ── Sequential fallback (Workers unavailable) ───────────────
-        nNut   = existing ? existing._nNut   : 0;
-        nGood  = existing ? existing._nGood  : 0;
-        nMarg  = existing ? existing._nMarg  : 0;
-        nTrash = existing ? existing._nTrash : 0;
-        vNut   = existing ? existing._vNut   : 0;
-        vGood  = existing ? existing._vGood  : 0;
-        vMarg  = existing ? existing._vMarg  : 0;
-        vTrash = existing ? existing._vTrash : 0;
-        sumEq  = existing ? existing._sumEq  : 0;
-        usedSamples = 0;
-
-        const heroSampler = __buildSampler(heroHands, rng);
-        const villSampler = __buildSampler(villHands, rng);
-        let attempts = 0;
-        while(usedSamples < samples && attempts < samples*50){
-          attempts++;
-          const h = heroHands[heroSampler.sampleIndex()].cards;
-          const v = villHands[villSampler.sampleIndex()].cards;
-          const used = new Set(h);
-          let overlap = false;
-          for(const c of v){ if(used.has(c)){ overlap=true; break; } }
-          if(overlap) continue;
-          for(const c of v) used.add(c);
-          const rem0 = [];
-          for(const c of fullDeck) if(!used.has(c)) rem0.push(c);
-          if(rem0.length < 5) continue;
-          let flop = null;
-          if(forcedFlops && forcedFlops.length){
-            const fi = Math.floor(rng() * forcedFlops.length);
-            flop = forcedFlops[fi];
-            if(used.has(flop[0]) || used.has(flop[1]) || used.has(flop[2])) continue;
-          }else{
-            for(let tries=0; tries<400; tries++){
-              const f3 = __randomSample3(rem0, rng);
-              if(__flopMatchesFilter(f3, filterIds)){ flop=f3; break; }
-            }
-            if(!flop) continue;
-          }
-          const used2 = new Set([...used, ...flop]);
-          const rem = [];
-          for(const c of fullDeck) if(!used2.has(c)) rem.push(c);
-          if(rem.length < 2) continue;
-          let wins=0, ties=0;
-          for(let r=0; r<runouts; r++){
-            const [t1,t2] = __randomSample2(rem, rng);
-            const board5  = [flop[0],flop[1],flop[2],t1,t2];
-            const hr = __bestPLOHandRank(h, board5);
-            const vr = __bestPLOHandRank(v, board5);
-            const cmp = __cmpRank(hr,vr);
-            if(cmp>0) wins++; else if(cmp===0) ties++;
-          }
-          const eq = (wins + ties*0.5) / runouts;
-          sumEq += eq; usedSamples++;
-          if(usedSamples % 50 === 0){
-            setProgress(`Range ${heroKey} vs ${villKey}: +${usedSamples} / ${samples}  (${(prevSamples+usedSamples).toLocaleString()} total)`, usedSamples/samples);
-            await new Promise(r => setTimeout(r, 0));
-          }
-          if(eq>=0.75) nNut++;
-          else if(eq>=0.40) nGood++;
-          else if(eq>=0.33) nMarg++;
-          else nTrash++;
-          const veq = 1-eq;
-          if(veq>=0.75) vNut++;
-          else if(veq>=0.40) vGood++;
-          else if(veq>=0.33) vMarg++;
-          else vTrash++;
-        }
-      }
-    } else {
-      // ── Fully cached, nothing new to compute ─────────────────────
-      nNut   = existing._nNut;   nGood  = existing._nGood;
-      nMarg  = existing._nMarg;  nTrash = existing._nTrash;
-      vNut   = existing._vNut;   vGood  = existing._vGood;
-      vMarg  = existing._vMarg;  vTrash = existing._vTrash;
-      sumEq  = existing._sumEq;  usedSamples = 0;
-    }
-
-    const totalSamples = prevSamples + usedSamples;
-    setProgress(`Range ${heroKey} vs ${villKey}: done  (${totalSamples.toLocaleString()} samples)`, 1);
-    await new Promise(r => setTimeout(r, 0));
-
-    const res = {
-      usedSamples: totalSamples,
-      avgEq: totalSamples>0 ? (sumEq  /totalSamples) : 0,
-      nut:   totalSamples>0 ? (nNut   /totalSamples) : 0,
-      good:  totalSamples>0 ? (nGood  /totalSamples) : 0,
-      marg:  totalSamples>0 ? (nMarg  /totalSamples) : 0,
-      trash: totalSamples>0 ? (nTrash /totalSamples) : 0,
-      vNut:  totalSamples>0 ? (vNut   /totalSamples) : 0,
-      vGood: totalSamples>0 ? (vGood  /totalSamples) : 0,
-      vMarg: totalSamples>0 ? (vMarg  /totalSamples) : 0,
-      vTrash:totalSamples>0 ? (vTrash /totalSamples) : 0,
-      filter: filterIds,
-      _nNut: nNut, _nGood: nGood, _nMarg: nMarg, _nTrash: nTrash,
-      _vNut: vNut, _vGood: vGood, _vMarg: vMarg, _vTrash: vTrash,
-      _sumEq: sumEq
-    };
-    __bucketCache.set(cacheKey, res);
-    resultsByHero[heroKey + "_vs_" + villKey] = res;
-  }
-
-  const BUCKET_CFG = [
-    { key:"nut",   vKey:"vNut",   label:"Nut hands",      color:"#22c55e" },
-    { key:"good",  vKey:"vGood",  label:"Good hands",     color:"#60a5fa" },
-    { key:"marg",  vKey:"vMarg",  label:"Marginal hands", color:"#f59e0b" },
-    { key:"trash", vKey:"vTrash", label:"Trash hands",    color:"#f87171" },
-  ];
-
-  const blocks = [];
-  for(const {heroKey, villKey} of computePairs){
-    const r = resultsByHero[heroKey + "_vs_" + villKey];
-    if(!r) continue;
-
-    const rowsHtml = BUCKET_CFG.map(cfg => {
-      const hPct = (r[cfg.key]  * 100).toFixed(1);
-      const vPct = (r[cfg.vKey] * 100).toFixed(1);
-      const hW   = Math.min(100, r[cfg.key]  * 100).toFixed(1);
-      const vW   = Math.min(100, r[cfg.vKey] * 100).toFixed(1);
-      return `
-        <div class="eq-bucket-row">
-          <div class="eq-bucket-hpct" style="color:${cfg.color}">${hPct}%</div>
-          <div class="eq-bucket-center">
-            <div class="eq-bucket-label">${cfg.label}</div>
-            <div class="eq-bucket-bars">
-              <div class="eq-bucket-bar-track">
-                <div class="eq-bucket-bar-fill" style="width:${hW}%; background:${cfg.color};"></div>
-              </div>
-              <div class="eq-bucket-bar-track eq-bucket-bar-villain">
-                <div class="eq-bucket-bar-fill" style="width:${vW}%; background:${cfg.color}; opacity:0.45;"></div>
-              </div>
-            </div>
-          </div>
-          <div class="eq-bucket-vpct" style="color:${cfg.color}">${vPct}%</div>
-        </div>`;
-    }).join("");
-
-    const heroEq  = (r.avgEq * 100).toFixed(1);
-    const villEq  = (100 - r.avgEq * 100).toFixed(1);
-    const eqColor = r.avgEq >= 0.52 ? 'var(--good)' : r.avgEq <= 0.48 ? 'var(--bad)' : 'var(--warn)';
-
-    blocks.push(`
-      <div class="eq-bucket-block">
-        <div class="eq-bucket-header">
-          <span><strong>${escapeHtml(heroKey)}</strong> vs <strong>${escapeHtml(villKey)}</strong></span>
-          <span class="subtle small">${(r.usedSamples||0).toLocaleString()} samples</span>
-        </div>
-        <div class="eq-equity-summary">
-          <div class="eq-es-label">Range ${escapeHtml(heroKey)}</div>
-          <div class="eq-es-val hero" style="color:${eqColor}">${heroEq}%</div>
-          <div class="eq-es-bar"><div class="eq-es-fill" style="width:${heroEq}%; background:${eqColor};"></div></div>
-          <div class="eq-es-val vill">${villEq}%</div>
-          <div class="eq-es-label">Range ${escapeHtml(villKey)}</div>
-        </div>
-        <div class="eq-bucket-legend">
-          <span style="color:var(--muted); font-size:10px;">HERO</span>
-          <span style="color:var(--muted); font-size:10px;">VILLAIN</span>
-        </div>
-        ${rowsHtml}
-      </div>
-    `);
-  }
+  // ─── Filter label ────────────────────────────────────────────────────────
   const catalog = flopTypesCatalog();
   let filterLabel;
   if(useSpec && forcedFlops && forcedFlops.length){
@@ -4250,15 +4133,62 @@ async function computeEquityBucketsForSelection(){
   const filterEl = document.getElementById("bucketFlopFilter");
   if(filterEl) filterEl.innerHTML = `Flop filter: <strong style="color:var(--text)">${escapeHtml(filterLabel)}</strong>`;
 
-  if(blocks.length===0){
-    out.textContent = "No results (check ranges / filters).";
-  }else{
-    out.innerHTML = blocks.join("");
+  // ─── Render ──────────────────────────────────────────────────────────────
+  const usedSamples = results[0]?.usedSamples || 0;
+  if(!usedSamples){
+    out.textContent = "No results — check ranges and flop filter.";
+    hideProgress(); setStatus("error"); return;
   }
+
+  const BUCKET_CFG = [
+    { key:"nut",   label:"Nut",   color:"#22c55e" },
+    { key:"good",  label:"Good",  color:"#60a5fa" },
+    { key:"marg",  label:"Marg",  color:"#f59e0b" },
+    { key:"trash", label:"Trash", color:"#f87171" },
+  ];
+
+  const nRanges = activeKeys.length;
+  const fairShare = 1 / nRanges;
+  const modeLabel = nRanges >= 3 ? `${nRanges}-way` : "Heads-up";
+
+  const rowsHtml = activeKeys.map((key, i) => {
+    const r = results[i];
+    const eqPct = (r.avgEq * 100).toFixed(1);
+    const eqColor = r.avgEq >= fairShare * 1.1 ? 'var(--good)'
+                  : r.avgEq <= fairShare * 0.9 ? 'var(--bad)' : 'var(--warn)';
+    const segs = BUCKET_CFG.map(cfg => {
+      const w = (r[cfg.key] * 100).toFixed(1);
+      return `<div class="mwb-seg" style="width:${w}%;background:${cfg.color}" title="${cfg.label}: ${w}%"></div>`;
+    }).join("");
+    const pcts = BUCKET_CFG.map(cfg =>
+      `<span style="color:${cfg.color}">${(r[cfg.key]*100).toFixed(0)}%</span>`
+    ).join("");
+    return `
+      <div class="mwb-row">
+        <div class="mwb-range-label"><strong>Range ${escapeHtml(key)}</strong></div>
+        <div class="mwb-avg-eq" style="color:${eqColor}">${eqPct}%</div>
+        <div class="mwb-bar-wrap">
+          <div class="mwb-bar-stacked">${segs}</div>
+          <div class="mwb-pct-row">${pcts}</div>
+        </div>
+      </div>`;
+  }).join("");
+
+  const legendHtml = BUCKET_CFG.map(cfg =>
+    `<span><span class="mwb-swatch" style="background:${cfg.color}"></span>${cfg.label}</span>`
+  ).join("");
+
+  out.innerHTML = `
+    <div class="mwb-block">
+      <div class="mwb-meta">${usedSamples.toLocaleString()} samples &nbsp;·&nbsp; ${modeLabel}</div>
+      <div class="mwb-grid">${rowsHtml}</div>
+      <div class="mwb-legend">${legendHtml}</div>
+    </div>`;
 
   hideProgress();
   setStatus("done");
 }
+
 
 (function attachBucketUI(){
   const btn = document.getElementById("runBucketsBtn");
