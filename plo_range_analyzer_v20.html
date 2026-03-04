@@ -3995,6 +3995,26 @@ function __randomSample2(arr, rng){
 
 async function computeMultiwayBucketSamples(handsArr, samples, runouts, forcedFlops, filterIds, progressCb) {
   const nRanges = handsArr.length;
+
+  // Try parallel worker path first
+  const rngSeed = (Math.random() * 0xffffffff) >>> 0;
+  const parallel = await runMultiwayBucketSamplesParallel(
+    handsArr, samples, runouts, forcedFlops, filterIds, rngSeed,
+    pct => { if(progressCb) progressCb(pct); }
+  );
+  if(parallel){
+    const { counters, usedSamples } = parallel;
+    return counters.map(c => ({
+      avgEq:  usedSamples > 0 ? c.sumEq / usedSamples : 0,
+      nut:    usedSamples > 0 ? c.nNut  / usedSamples : 0,
+      good:   usedSamples > 0 ? c.nGood / usedSamples : 0,
+      marg:   usedSamples > 0 ? c.nMarg / usedSamples : 0,
+      trash:  usedSamples > 0 ? c.nTrash/ usedSamples : 0,
+      usedSamples,
+    }));
+  }
+
+  // Fallback: single-threaded
   const fullDeck = buildFullDeck();
   const rng = Math.random;
   const samplers = handsArr.map(h => __buildSampler(h, rng));
@@ -4534,6 +4554,69 @@ function runBucketSamples(heroHands, villHands, samples, runouts, forcedFlops, f
 }
 `;
 
+  const runMultiwayBucketSamplesStr = `
+function runMultiwayBucketSamples(handsArr, samples, runouts, forcedFlops, filterIds, rngSeed){
+  const rng = mulberry32(rngSeed >>> 0);
+  const nRanges = handsArr.length;
+  const fullDeck = buildFullDeck();
+  const samplers = handsArr.map(h => __buildSampler(h, rng));
+  const counters = [];
+  for(let i=0;i<nRanges;i++) counters.push({nNut:0,nGood:0,nMarg:0,nTrash:0,sumEq:0});
+  let usedSamples=0, attempts=0;
+  while(usedSamples < samples && attempts < samples*100){
+    attempts++;
+    const hands = handsArr.map((h,i) => h[samplers[i].sampleIndex()].cards);
+    const usedCards = new Set();
+    let overlap = false;
+    for(const h of hands){
+      for(const c of h){ if(usedCards.has(c)){ overlap=true; break; } usedCards.add(c); }
+      if(overlap) break;
+    }
+    if(overlap) continue;
+    const rem0 = [];
+    for(const c of fullDeck) if(!usedCards.has(c)) rem0.push(c);
+    if(rem0.length < 5) continue;
+    let flop = null;
+    if(forcedFlops && forcedFlops.length){
+      const fi = Math.floor(rng()*forcedFlops.length);
+      flop = forcedFlops[fi];
+      if(usedCards.has(flop[0])||usedCards.has(flop[1])||usedCards.has(flop[2])) continue;
+    } else {
+      for(let tries=0;tries<400;tries++){
+        const f3=__randomSample3(rem0,rng);
+        if(__flopMatchesFilter(f3,filterIds)){ flop=f3; break; }
+      }
+      if(!flop) continue;
+    }
+    const usedCards2 = new Set([...usedCards,...flop]);
+    const rem = [];
+    for(const c of fullDeck) if(!usedCards2.has(c)) rem.push(c);
+    if(rem.length < 2) continue;
+    const winEqs = new Array(nRanges).fill(0);
+    for(let r=0;r<runouts;r++){
+      const [t1,t2] = __randomSample2(rem,rng);
+      const board5 = [flop[0],flop[1],flop[2],t1,t2];
+      const ranks = hands.map(h => __bestPLOHandRank(h,board5));
+      let best = ranks[0];
+      for(let i=1;i<nRanges;i++) if(__cmpRank(ranks[i],best)>0) best=ranks[i];
+      const isBest = ranks.map(rank => __cmpRank(rank,best)===0);
+      const nWinners = isBest.filter(Boolean).length;
+      for(let i=0;i<nRanges;i++) if(isBest[i]) winEqs[i] += 1/nWinners;
+    }
+    for(let i=0;i<nRanges;i++){
+      const eq = winEqs[i]/runouts;
+      counters[i].sumEq += eq;
+      if(eq>=0.75) counters[i].nNut++;
+      else if(eq>=0.40) counters[i].nGood++;
+      else if(eq>=0.33) counters[i].nMarg++;
+      else counters[i].nTrash++;
+    }
+    usedSamples++;
+  }
+  return { counters, usedSamples };
+}
+`;
+
   const dispatch = `
 self.onmessage = function(e){
   const msg = e.data;
@@ -4550,6 +4633,12 @@ self.onmessage = function(e){
         msg.runouts, msg.forcedFlops, msg.filterIds, msg.rngSeed
       );
       self.postMessage({ type:'bucketsResult', result });
+    } else if(msg.type === 'runMultiwayBuckets'){
+      const result = runMultiwayBucketSamples(
+        msg.handsArr, msg.samples, msg.runouts,
+        msg.forcedFlops, msg.filterIds, msg.rngSeed
+      );
+      self.postMessage({ type:'multiwayBucketsResult', result });
     }
   } catch(err){
     self.postMessage({ type:'error', error: String(err) });
@@ -4560,6 +4649,7 @@ self.onmessage = function(e){
   const src = fns.map(fn => fn.toString()).join('\n\n')
             + '\n\n' + preamble
             + '\n\n' + runBucketSamplesStr
+            + '\n\n' + runMultiwayBucketSamplesStr
             + '\n\n' + dispatch;
   return URL.createObjectURL(new Blob([src], { type:'application/javascript' }));
 }
@@ -4675,6 +4765,46 @@ function mergeBucketResults(parts){
     m.usedSamples += p.usedSamples;
   }
   return m;
+}
+
+/**
+ * Parallel multiway equity-bucket sampling.
+ * Returns merged { counters, usedSamples }, or null if workers unavailable.
+ */
+async function runMultiwayBucketSamplesParallel(handsArr, samples, runouts, forcedFlops, filterIds, rngSeed, onProgress){
+  const workers = getPLOWorkers();
+  if(!workers) return null;
+  const n    = workers.length;
+  const base = Math.floor(samples / n);
+  let completed = 0;
+  const tasks = workers.map((w, i) => {
+    const wSamples = (i === n-1) ? samples - base*(n-1) : base;
+    const wSeed    = ((rngSeed ^ (i * 0x9e3779b9)) >>> 0);
+    return runWorkerTask(w, {
+      type:'runMultiwayBuckets', handsArr,
+      samples: wSamples, runouts, forcedFlops, filterIds, rngSeed: wSeed
+    }).then(r => { completed++; if(onProgress) onProgress(completed / n); return r; });
+  });
+  const results = await Promise.all(tasks);
+  return mergeMultiwayBucketResults(results.map(r => r.result));
+}
+
+function mergeMultiwayBucketResults(parts){
+  if(!parts || !parts.length) return null;
+  const nRanges = parts[0].counters.length;
+  const merged  = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nTrash:0, sumEq:0}));
+  let usedSamples = 0;
+  for(const p of parts){
+    for(let i = 0; i < nRanges; i++){
+      merged[i].nNut  += p.counters[i].nNut;
+      merged[i].nGood += p.counters[i].nGood;
+      merged[i].nMarg += p.counters[i].nMarg;
+      merged[i].nTrash+= p.counters[i].nTrash;
+      merged[i].sumEq += p.counters[i].sumEq;
+    }
+    usedSamples += p.usedSamples;
+  }
+  return { counters: merged, usedSamples };
 }
 
 let __flopTypeSortDesc = false; // false = catalog order, true = sort by freq desc
