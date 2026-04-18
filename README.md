@@ -56,7 +56,7 @@ Ranges can be entered as explicit combos or as ORS expressions:
 | `AA**` | Any hand with a pair of aces |
 | `*h*h**` | Any two-suited hand |
 | `AA**$ds` | Double-suited aces |
-| `B` | Broadway card (A/K/Q/J) |
+| `B` | Broadway card (A/K/Q/J/T) |
 | `M` | Middle card (T/9/8/7) |
 | `N` | Near-broadway (K/Q/J/T/9) |
 | `15%` | Top 15% of hands by equity |
