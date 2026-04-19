@@ -1373,7 +1373,7 @@ body:not(.dark) .mwb-bar-stacked { background: rgba(0,0,0,.07); }
                   <button id="runBucketsBtn" style="height:40px;">Compute buckets</button>
                 </div>
                 <div>
-                  <button type="button" class="btn-xs blue" id="downloadRankerBtn" title="Download plo_ranker.js — run with: node plo_ranker.js > rankings.csv" style="display:none;">⬇ plo_ranker.js</button>
+                  <button type="button" class="btn-xs blue" id="downloadRankerBtn" title="Download plo_ranker.js — run with: node plo_ranker.js > rankings.csv" style="height:40px; padding:0 12px;">⬇ plo_ranker.js</button>
                 </div>
                 <div class="pill" id="bucketStatus" style="display:none;"><span>Status</span> <strong id="bucketStatusText">&mdash;</strong></div>
               </div>
@@ -1412,7 +1412,7 @@ body:not(.dark) .mwb-bar-stacked { background: rgba(0,0,0,.07); }
     </div><!-- end explorerResultsCard -->
 
     <!-- ── Hand Ranker ── -->
-    <div class="card" id="rankerCard" style="display:none;">
+    <div class="card" id="rankerCard">
       <div id="rankerCardHeader" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
         <h3 style="margin:0; font-size:14px;">Hand Ranker</h3>
         <button type="button" class="btn-xs" id="rankerCollapseBtn" style="font-size:11px; opacity:.6;">▼ Show</button>
