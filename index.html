@@ -5311,7 +5311,7 @@ function drawGroupedBarChart(canvas, rows, ranges){
   const {w, h} = chartResizeCanvas(canvas);
   ctx.clearRect(0,0,w,h);
 
-  const padL = 18, padR = 12, padT = 14, padB = 46;
+  const padL = 18, padR = 12, padT = 14, padB = 38;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
 
@@ -5349,7 +5349,7 @@ function drawGroupedBarChart(canvas, rows, ranges){
       ctx.fill(); ctx.stroke();
     }
     ctx.fillStyle = getComputedStyle(document.body).getPropertyValue("--chartText2").trim() || "rgba(17,17,17,0.55)";
-    ctx.font = `${Math.max(15, Math.floor(w/40))}px ui-sans-serif, system-ui`;
+    ctx.font = `${Math.max(13, Math.floor(w/50))}px ui-sans-serif, system-ui`;
     ctx.textAlign = "center";
     ctx.fillText(rows[g].label, gx + groupW/2, padT+plotH+22);
   }
@@ -5371,7 +5371,7 @@ function drawGroupedBarChartInto(canvas, rows, ranges, legendHostEl){
   const {w, h} = chartResizeCanvas(canvas);
   ctx.clearRect(0,0,w,h);
 
-  const padL = 18, padR = 12, padT = 14, padB = 46;
+  const padL = 18, padR = 12, padT = 14, padB = 38;
   const plotW = w - padL - padR;
   const plotH = h - padT - padB;
 
@@ -5409,7 +5409,7 @@ function drawGroupedBarChartInto(canvas, rows, ranges, legendHostEl){
       ctx.fill(); ctx.stroke();
     }
     ctx.fillStyle = getComputedStyle(document.body).getPropertyValue("--chartText2").trim() || "rgba(17,17,17,0.55)";
-    ctx.font = `${Math.max(15, Math.floor(w/40))}px ui-sans-serif, system-ui`;
+    ctx.font = `${Math.max(13, Math.floor(w/50))}px ui-sans-serif, system-ui`;
     ctx.textAlign = "center";
     ctx.fillText(rows[g].label, gx + groupW/2, padT+plotH+22);
   }
