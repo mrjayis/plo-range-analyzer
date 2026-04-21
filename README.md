@@ -17,7 +17,7 @@ No install. No server. Download and open in any browser.
 - Range size displayed as a percentage of all possible hands (exact for PLO4, approximate for PLO5/6)
 - Plain-English range description (combo count, suitedness %, pairing %, connectivity %)
 - Save and load ranges via a built-in library (IndexedDB), with a preset library of common ranges
-- Natural language → ORS translator powered by Claude AI (API key required; few-shot learning from your own corrections)
+- **Natural language → ORS translator** — describe a range in plain English and get back an ORS expression. For example: *"aces double suited"*, *"rundown hands with a flush draw"*, *"top 20% hands that aren't double-paired"*. Powered by Claude AI (your own Anthropic API key required). Adapts to your terminology over time via few-shot learning — each time you accept a translation it's saved as an example for future requests
 
 ### Flop Explorer
 - Monte Carlo simulation across all flop types for up to 6 ranges simultaneously
