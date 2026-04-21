@@ -192,10 +192,8 @@ body:not(.dark) .lib-badge.green{ background:rgba(22,163,74,.1); color:#15803d; 
 .lib-empty{ text-align:center; padding:24px; color:var(--muted); font-size:12px; }
 
 /* Slot headers with action buttons */
-.slot-header{ display:flex; justify-content:space-between; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:nowrap; overflow:hidden; }
-.slot-header label{ font-size:11px !important; font-weight:700; }
-.slot-actions{ display:flex; gap:4px; align-items:center; }
-.slot-actions .btn-xs{ height:20px; padding:0 6px; font-size:10px; border-radius:6px; }
+.slot-header{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+.slot-actions{ display:flex; gap:6px; align-items:center; }
 .btn-xs{ height:26px; padding:0 8px; font-size:11px; border-radius:8px; cursor:pointer; font-weight:600;
   background:rgba(99,102,241,.15); color:#818cf8; border:1px solid rgba(99,102,241,.25); }
 .btn-xs:hover{ background:rgba(99,102,241,.28); border-color:rgba(99,102,241,.5); }
@@ -924,57 +922,6 @@ body:not(.dark) .mwb-bar-stacked { background: rgba(0,0,0,.07); }
 #flopTypeBody tr[data-gap-rank="0"] { box-shadow: inset 3px 0 0 rgba(16,185,129,1) !important; }
 #flopTypeBody tr[data-gap-rank="1"] { box-shadow: inset 3px 0 0 rgba(16,185,129,0.55) !important; }
 #flopTypeBody tr[data-gap-rank="2"] { box-shadow: inset 3px 0 0 rgba(16,185,129,0.28) !important; }
-
-/* ── Custom scrollbars ── */
-/* Applies to: textareas, library lists, classList, syntax modal */
-.dark-scroll,
-textarea,
-#classList,
-.lib-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(99,102,241,.35) transparent;
-}
-.dark-scroll::-webkit-scrollbar,
-textarea::-webkit-scrollbar,
-#classList::-webkit-scrollbar,
-.lib-scroll::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-.dark-scroll::-webkit-scrollbar-track,
-textarea::-webkit-scrollbar-track,
-#classList::-webkit-scrollbar-track,
-.lib-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.dark-scroll::-webkit-scrollbar-thumb,
-textarea::-webkit-scrollbar-thumb,
-#classList::-webkit-scrollbar-thumb,
-.lib-scroll::-webkit-scrollbar-thumb {
-  background: rgba(99,102,241,.30);
-  border-radius: 99px;
-}
-.dark-scroll::-webkit-scrollbar-thumb:hover,
-textarea::-webkit-scrollbar-thumb:hover,
-#classList::-webkit-scrollbar-thumb:hover,
-.lib-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(99,102,241,.60);
-}
-body:not(.dark) textarea,
-body:not(.dark) #classList,
-body:not(.dark) .lib-scroll {
-  scrollbar-color: rgba(99,102,241,.25) transparent;
-}
-body:not(.dark) textarea::-webkit-scrollbar-thumb,
-body:not(.dark) #classList::-webkit-scrollbar-thumb,
-body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb {
-  background: rgba(99,102,241,.22);
-}
-body:not(.dark) textarea::-webkit-scrollbar-thumb:hover,
-body:not(.dark) #classList::-webkit-scrollbar-thumb:hover,
-body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(99,102,241,.45);
-}
 </style>
 </head>
 <body class="dark">
@@ -1055,7 +1002,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
 </div>
 <div id="confirmModal" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(0,0,0,.55); backdrop-filter:blur(3px); align-items:center; justify-content:center;">
   <div style="background:var(--card); border:1px solid var(--border); border-radius:18px; padding:22px 24px; min-width:280px; max-width:380px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,.5);">
-    <div id="confirmModalMsg" style="font-size:11px; color:var(--text); margin-bottom:16px; line-height:1.5;"></div>
+    <div id="confirmModalMsg" style="font-size:13px; color:var(--text); margin-bottom:16px; line-height:1.5;"></div>
     <div style="display:flex; gap:8px; justify-content:flex-end;">
       <button type="button" class="btn-xs" id="confirmModalCancel">Cancel</button>
       <button type="button" class="btn-xs red" id="confirmModalOk">Confirm</button>
@@ -1150,7 +1097,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
           <div class="range-slot-box">
             <div class="slot-header">
               <div style="display:flex; align-items:baseline; gap:7px; min-width:0;">
-                <label style="margin:0; font-weight:700; font-size:11px; color:var(--text);">Range A</label>
+                <label style="margin:0; font-weight:700; font-size:13px; color:var(--text);">Range A</label>
                 <span id="rangeSizeA" class="lib-meta"></span>
               </div>
               <div class="slot-actions">
@@ -1165,7 +1112,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
           <div class="range-slot-box">
             <div class="slot-header">
               <div style="display:flex; align-items:baseline; gap:7px; min-width:0;">
-                <label style="margin:0; font-weight:700; font-size:11px; color:var(--text);">Range B</label>
+                <label style="margin:0; font-weight:700; font-size:13px; color:var(--text);">Range B</label>
                 <span id="rangeSizeB" class="lib-meta"></span>
               </div>
               <div class="slot-actions">
@@ -1180,7 +1127,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
           <div class="range-slot-box">
             <div class="slot-header">
               <div style="display:flex; align-items:baseline; gap:7px; min-width:0;">
-                <label style="margin:0; font-weight:700; font-size:11px; color:var(--text);">Range C</label>
+                <label style="margin:0; font-weight:700; font-size:13px; color:var(--text);">Range C</label>
                 <span id="rangeSizeC" class="lib-meta"></span>
               </div>
               <div class="slot-actions">
@@ -1195,7 +1142,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
           <div class="range-slot-box">
             <div class="slot-header">
               <div style="display:flex; align-items:baseline; gap:7px; min-width:0;">
-                <label style="margin:0; font-weight:700; font-size:11px; color:var(--text);">Range D</label>
+                <label style="margin:0; font-weight:700; font-size:13px; color:var(--text);">Range D</label>
                 <span id="rangeSizeD" class="lib-meta"></span>
               </div>
               <div class="slot-actions">
@@ -1210,7 +1157,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
           <div class="range-slot-box">
             <div class="slot-header">
               <div style="display:flex; align-items:baseline; gap:7px; min-width:0;">
-                <label style="margin:0; font-weight:700; font-size:11px; color:var(--text);">Range E</label>
+                <label style="margin:0; font-weight:700; font-size:13px; color:var(--text);">Range E</label>
                 <span id="rangeSizeE" class="lib-meta"></span>
               </div>
               <div class="slot-actions">
@@ -1225,7 +1172,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
           <div class="range-slot-box">
             <div class="slot-header">
               <div style="display:flex; align-items:baseline; gap:7px; min-width:0;">
-                <label style="margin:0; font-weight:700; font-size:11px; color:var(--text);">Range F</label>
+                <label style="margin:0; font-weight:700; font-size:13px; color:var(--text);">Range F</label>
                 <span id="rangeSizeF" class="lib-meta"></span>
               </div>
               <div class="slot-actions">
@@ -1264,7 +1211,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
           <input id="libSearch" type="text" placeholder="Search saved ranges…" style="flex:1; min-width:140px; height:32px; padding:6px 10px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,.12); color:var(--text); font-size:12px;" />
           <span class="lib-meta" id="libCount"></span>
         </div>
-        <div class="lib-scroll" style="max-height:240px; overflow-y:auto; border:1px solid var(--border); border-radius:12px;">
+        <div style="max-height:240px; overflow-y:auto; border:1px solid var(--border); border-radius:12px;">
           <table class="lib-table">
             <thead><tr><th>Name</th><th style="text-align:center;">Actions</th><th>Game</th><th>Size</th><th>Saved</th></tr></thead>
             <tbody id="libTableBody"><tr><td colspan="5" class="lib-empty">No saved ranges yet. Use 💾 buttons above.</td></tr></tbody>
@@ -1290,7 +1237,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
           <input id="bakedSearch" type="text" placeholder="Search presets…" style="flex:1; min-width:140px; height:32px; padding:6px 10px; border-radius:10px; border:1px solid var(--border); background:rgba(0,0,0,.12); color:var(--text); font-size:12px;" />
           <span id="bakedCount" class="lib-meta"></span>
         </div>
-        <div class="lib-scroll" style="max-height:240px; overflow-y:auto; border:1px solid var(--border); border-radius:12px;">
+        <div style="max-height:240px; overflow-y:auto; border:1px solid var(--border); border-radius:12px;">
           <table class="lib-table">
             <thead><tr><th>Preset name</th><th>Game</th><th style="text-align:center;">Load</th></tr></thead>
             <tbody id="bakedTableBody"><tr><td colspan="3" class="lib-empty">No baked presets in this build.</td></tr></tbody>

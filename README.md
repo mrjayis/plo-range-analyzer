@@ -12,27 +12,34 @@ No install. No server. Download and open in any browser.
 
 ### Range Analysis
 - Parse and analyze PLO4/5/6 hand ranges using explicit combos or ORS (Omaha Range Syntax)
-- Side-by-side comparison of up to 3 ranges (A / B / C)
+- Side-by-side comparison of up to **6 ranges (A–F)** simultaneously
 - Breakdowns by suitedness, connectivity, pairing, and high-card strength
 - Range size displayed as a percentage of all possible hands (exact for PLO4, approximate for PLO5/6)
 - Plain-English range description (combo count, suitedness %, pairing %, connectivity %)
-- Save and load ranges via a built-in library (IndexedDB)
-- Natural language → ORS translator powered by Claude AI (API key required)
+- Save and load ranges via a built-in library (IndexedDB), with a preset library of common ranges
+- Natural language → ORS translator powered by Claude AI (API key required; few-shot learning from your own corrections)
 
 ### Flop Explorer
-- Monte Carlo simulation across all flop types for up to 3 ranges simultaneously
-- Tracks made hands (two pair, set, flush, straight, full house, etc.) and draws (flush draw, OESD, gutshot, etc.) per range per flop type
+- Monte Carlo simulation across all flop types for up to 6 ranges simultaneously
+- Tracks made hands (two pair, set, flush, straight, full house, etc.) and draws (flush draw, OESD, gutshot, wraps, etc.) per range per flop type
 - Flop type catalog: Any, Monotone, Two-tone, Rainbow, Paired, Unpaired, Trips, Low, 2-broadway, 3-broadway, High-connected, Low-connected
+- Multi-select flop types to intersect (e.g. Paired ∩ Monotone)
 - Flop types with the largest frequency gap between ranges are highlighted automatically
 - Specific flop syntax: enter explicit boards (`As Kd 7c`) or ORS flop patterns to constrain sampling
 - Parallel web worker execution for fast simulation
+- CSV export of all results including flop type intersections
 
-### Multiway Equity Buckets
+### Equity Buckets
 - True N-way equity computation (not pairwise) — all active ranges compete simultaneously
-- Buckets: Nut (≥75%), Good (40–75%), Marginal (33–40%), Trash (<33%)
+- **Two views:**
+  - **Runout equity** — Monte Carlo runouts to showdown; buckets: Nut (≥75%), Good (40–75%), Marginal (33–40%), Trash (<33%)
+  - **Flop made hands** — evaluates hand strength on the flop only (no runout); stacked bar showing Air, Pair, Draw, Two pair, Set/Trips, Straight, Flush, Full house/Quads
+- **Winning hands at showdown chart** — stacked bar per range showing which PLO hand category wins the pot most often (High card / One pair / Two pair / Trips / Set / Straight / Flush / Full house / Quads / Str. flush); Set and Trips tracked separately
+- **Equity distribution chart** — smoothed curve per range showing the full equity distribution across samples, with hover tooltip showing hand type labels
 - Results accumulate across repeated runs for higher sample counts
-- Filterable by flop type or specific boards
-- Parallelised across web workers
+- Filterable by any selected flop type or specific boards
+- Full-width layout with interactive hover tooltips on all charts
+- Parallel web worker execution
 
 ### Quiz Mode
 - Generates questions from your own explorer results
@@ -40,9 +47,6 @@ No install. No server. Download and open in any browser.
 - Filters out invalid question combinations (e.g. flush draws on rainbow flops)
 - Configurable tolerance (±3% / ±5% / ±10%)
 - Score tracking per session
-
-### CSV Export
-- Export all explorer results (including flop type intersections like "Two-tone ∩ 2-broadway") as a CSV
 
 ---
 
@@ -84,19 +88,19 @@ Ranges can be entered as explicit combos or as ORS expressions:
 Everything lives in one HTML file — no build step, no dependencies, no server.
 
 - **Parser:** Recursive descent ORS parser with set operations (union `,`, difference `!`, intersection `&`)
-- **Hand analysis:** Pure functions classify suitedness, connectivity, pairing, and rank strength
+- **Hand analysis:** Pure functions classify suitedness, connectivity, pairing, and rank strength; connectivity labels include Rundown, Gapped, and Disconnected
 - **Simulation:** Seeded Mulberry32 PRNG, parallelised across Web Workers
-- **Persistence:** IndexedDB for saved ranges; `localStorage` for theme and UI state
-- **Charts:** Canvas 2D API
+- **Equity lookup:** Embedded 16,432-group equity table (~175KB) powers the `%` percentile syntax for PLO4
+- **Persistence:** IndexedDB for saved ranges; `localStorage` for theme, UI state, and NL translator examples
+- **Charts:** Canvas 2D API (bar charts, stacked bars, equity distribution curves, hover overlays)
 
 ---
 
 ## Usage
 
-1. Download `plo_range_analyzer_v22.html` (or use the [live app](https://mrjayis.github.io/plo-range-analyzer/))
-2. Open in Chrome, Firefox, or Safari
-3. Paste a range into slot A (explicit combos or ORS syntax)
-4. Click **Analyze Range** for hand breakdowns
-5. Add ranges B and/or C, then click **Run Explorer** for flop simulation
-6. Click **Run Buckets** for multiway equity distribution
-7. Click **Quiz Me** to test yourself on the results
+1. Open the [live app](https://mrjayis.github.io/plo-range-analyzer/) or download `index.html`
+2. Paste a range into slot A (explicit combos or ORS syntax)
+3. Click **Analyze Range** for hand breakdowns
+4. Add ranges B–F as needed, then click **Run Explorer** for flop simulation
+5. Select a flop type from the table, then click **Compute Buckets** for multiway equity distribution
+6. Click **Quiz Me** to test yourself on the explorer results
