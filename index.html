@@ -113,15 +113,15 @@ canvas.chart{ width:100%; height:220px; border-radius:14px; background:rgba(255,
 .legendSwatch{ width:10px; height:10px; border-radius:3px; background:rgba(255,255,255,.35); border:1px solid rgba(255,255,255,.18); }
 
 :root{
-  --bg:#ffffff;
-  --card:#f7f7fb;
+  --bg:#dde2ea;
+  --card:#e8ecf2;
   --text:#111111;
   --muted:#555;
   --accent:#4f46e5;
   --spade:#000000;
 }
-body{ background:#ffffff !important; color:#111 !important; }
-.card{ background:var(--card) !important; border:1px solid rgba(0,0,0,.08) !important; }
+body{ background:#dde2ea !important; color:#111 !important; }
+.card{ background:var(--card) !important; border:1px solid rgba(0,0,0,.10) !important; }
 .small{ color:#444 !important; }
 button:not(.btn-xs):not(.lib-tab){
   background: linear-gradient(135deg,#6366f1,#22c55e) !important;
@@ -130,16 +130,16 @@ button:not(.btn-xs):not(.lib-tab){
 }
 
 :root{
-  --bg:#ffffff;
-  --card:#f7f7fb;
+  --bg:#dde2ea;
+  --card:#e8ecf2;
   --text:#111111;
   --muted:#555555;
-  --border: rgba(0,0,0,.10);
+  --border: rgba(0,0,0,.12);
   --grid: rgba(0,0,0,.10);
   --chartText: rgba(17,17,17,.70);
   --chartText2: rgba(17,17,17,.55);
-  --chipBg: rgba(255,255,255,.70);
-  --chipBorder: rgba(0,0,0,.16);
+  --chipBg: #e8ecf2;
+  --chipBorder: rgba(0,0,0,.18);
 }
 body{ background:var(--bg) !important; color:var(--text) !important; }
 .card{ background:var(--card) !important; border:1px solid var(--border) !important; }
@@ -376,8 +376,8 @@ body:not(.dark) .eq-bucket-vpct{ filter: brightness(0.72); }
 
 /* --- Core design tokens ------------------------------------ */
 :root {
-  --bg:         #f2f5fb;
-  --card:       #ffffff;
+  --bg:         #dde2ea;
+  --card:       #e8ecf2;
   --text:       #0c1a2e;
   --muted:      #516882;
   --accent:     #059669;
@@ -385,11 +385,11 @@ body:not(.dark) .eq-bucket-vpct{ filter: brightness(0.72); }
   --good:       #059669;
   --warn:       #d97706;
   --bad:        #dc2626;
-  --border:     rgba(0,0,0,.09);
-  --border2:    rgba(0,0,0,.05);
-  --grid:       rgba(0,0,0,.07);
-  --chipBg:     #ffffff;
-  --chipBorder: rgba(0,0,0,.16);
+  --border:     rgba(0,0,0,.12);
+  --border2:    rgba(0,0,0,.07);
+  --grid:       rgba(0,0,0,.09);
+  --chipBg:     #e8ecf2;
+  --chipBorder: rgba(0,0,0,.18);
   --chartText:  rgba(12,26,46,.70);
   --chartText2: rgba(12,26,46,.48);
   --spade:      #0c1a2e;
@@ -725,7 +725,7 @@ canvas.chart {
   border: 1px solid var(--border) !important;
 }
 body:not(.dark) canvas.chart {
-  background: linear-gradient(180deg, #fafbff 0%, #f2f5fb 100%) !important;
+  background: linear-gradient(180deg, #e8ecf2 0%, #dde2ea 100%) !important;
 }
 body.dark canvas.chart {
   background: linear-gradient(180deg, rgba(255,255,255,.035) 0%, rgba(255,255,255,.015) 100%) !important;
@@ -975,6 +975,38 @@ body:not(.dark) #classList::-webkit-scrollbar-thumb:hover,
 body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(99,102,241,.45);
 }
+
+/* ── Equity interpreter ── */
+#eqInterpPanel { margin-top: 14px; }
+#eqInterpPanel .interp-header {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px;
+}
+.interp-items { display: flex; flex-direction: column; gap: 6px; }
+.interp-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 11px;
+}
+.interp-tag { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.interp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.interp-label { font-size: 11px; font-weight: 700; color: var(--text); }
+.interp-text { font-size: 11.5px; color: var(--muted); line-height: 1.55; }
+body.dark .interp-item { background: rgba(255,255,255,.03); }
+
+/* ── IP/OOP position toggle ── */
+.pos-toggle { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.pos-toggle-label { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.pos-btn {
+  font-size: 10px; font-weight: 700; padding: 2px 9px; border-radius: 99px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted); cursor: pointer; transition: all .15s;
+}
+.pos-btn.active-ip  { background: rgba(96,165,250,.18); border-color: #60a5fa; color: #60a5fa; }
+.pos-btn.active-oop { background: rgba(251,146,60,.18); border-color: #fb923c; color: #fb923c; }
+.pos-btn:hover:not(.active-ip):not(.active-oop) { border-color: var(--accent); color: var(--accent); }
+.pos-sep { font-size: 10px; color: var(--muted); opacity: .5; }
 </style>
 </head>
 <body class="dark">
@@ -1109,7 +1141,8 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
         </div>
       </div>
 
-      <!-- Natural Language → ORS translator -->
+      <!-- Natural Language → ORS translator (commented out) -->
+      <!--
       <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <button type="button" id="nlToggleBtn" class="btn-xs" style="display:none;">✦ Plain English</button>
         <button type="button" id="exportRankingsBtn" class="btn-xs blue" style="font-size:11px; opacity:.65;">⬇ Rankings CSV</button>
@@ -1147,6 +1180,7 @@ body:not(.dark) .lib-scroll::-webkit-scrollbar-thumb:hover {
         </div>
         <div id="nlError" style="display:none; margin-top:5px; font-size:12px; color:var(--bad);"></div>
       </div>
+      -->
 
       <div style="margin-top:14px;">
         <div class="range-ab-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
@@ -4567,27 +4601,232 @@ async function computeEquityBucketsForSelection(){
   const RANGE_PALETTE = ["#60a5fa","#f472b6","#22c55e","#f59e0b","#a78bfa","#fb923c"];
 
   const chartTitle = isFlopMode ? "Flop made-hand strength" : "Equity distribution";
+  const normToggle = !isFlopMode ? `<button type="button" id="eqNormToggle" class="btn-xs" style="font-size:10px; padding:0 7px; height:18px; opacity:.7;" title="Toggle per-range normalization">${window.__eqNormalized!==false?'Normalized':'Absolute'}</button>` : '';
+  const winCatMode = window.__winCatMode || 'wins';
   const winCatSection = !isFlopMode ? `
-    <div style="font-size:11px;color:var(--muted);margin:10px 0 4px;">Winning hands at showdown</div>
+    <div style="display:flex;align-items:center;gap:7px;margin:10px 0 4px;">
+      <span style="font-size:11px;color:var(--muted);">Winning hands at showdown</span>
+      <button type="button" id="winCatModeToggle" class="btn-xs" style="font-size:10px; padding:0 7px; height:18px; opacity:.7;" title="Toggle win vs sample denominator">${winCatMode==='wins'?'% of wins':'% of samples'}</button>
+    </div>
     <canvas id="winCatCanvas" style="width:100%; display:block; margin-bottom:10px; border-radius:8px;"></canvas>` : '';
   out.innerHTML = `
     <div class="mwb-block">
       <div class="mwb-meta">${usedSamples.toLocaleString()} samples &nbsp;·&nbsp; ${modeLabel}</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">${chartTitle}</div>
+      <div style="display:flex; align-items:center; gap:7px; margin-bottom:4px;">
+        <span style="font-size:11px;color:var(--muted);">${chartTitle}</span>
+        ${normToggle}
+      </div>
       <canvas id="equityDistCanvas" style="width:100%; display:block; margin-bottom:10px; border-radius:8px;"></canvas>
       ${winCatSection}
       <div class="mwb-grid">${rowsHtml}</div>
       <div class="mwb-legend">${legendHtml}</div>
+      ${!isFlopMode ? '<div id="eqInterpPanel"></div>' : ''}
     </div>`;
 
   const distCanvas = document.getElementById("equityDistCanvas");
   if(distCanvas){
     if(isFlopMode) drawFlopCategoryChart(distCanvas, activeKeys, acc);
-    else drawEquityDistChart(distCanvas, activeKeys, acc, RANGE_PALETTE, bucketMode);
+    else drawEquityDistChart(distCanvas, activeKeys, acc, RANGE_PALETTE, bucketMode, window.__eqNormalized!==false);
   }
 
   const winCatCanvas = document.getElementById("winCatCanvas");
-  if(winCatCanvas && !isFlopMode) drawWinCatChart(winCatCanvas, activeKeys, acc);
+  if(winCatCanvas && !isFlopMode) drawWinCatChart(winCatCanvas, activeKeys, acc, window.__winCatMode||'wins');
+
+  // Wire toggles
+  const winCatModeBtn = document.getElementById("winCatModeToggle");
+  if(winCatModeBtn){
+    winCatModeBtn.addEventListener('click', () => {
+      window.__winCatMode = (window.__winCatMode||'wins') === 'wins' ? 'samples' : 'wins';
+      winCatModeBtn.textContent = window.__winCatMode === 'wins' ? '% of wins' : '% of samples';
+      const c = document.getElementById("winCatCanvas");
+      if(c) drawWinCatChart(c, activeKeys, acc, window.__winCatMode);
+    });
+  }
+
+  const normBtn = document.getElementById("eqNormToggle");
+  if(normBtn){
+    normBtn.addEventListener('click', () => {
+      window.__eqNormalized = (window.__eqNormalized === false) ? true : false;
+      normBtn.textContent = window.__eqNormalized ? 'Normalized' : 'Absolute';
+      const c = document.getElementById("equityDistCanvas");
+      if(c) drawEquityDistChart(c, activeKeys, acc, RANGE_PALETTE, bucketMode, window.__eqNormalized);
+    });
+  }
+
+  // Interpretation panel
+  if(!isFlopMode) {
+    const interpPanel = document.getElementById("eqInterpPanel");
+    if(interpPanel) {
+      const PALETTE = ["#60a5fa","#f472b6","#22c55e","#f59e0b","#a78bfa","#fb923c"];
+
+      function itemsToHtml(items) {
+        return items.map(item => {
+          const color = item.key ? (PALETTE['ABCDEF'.indexOf(item.key)] || '#94a3b8') : 'var(--accent)';
+          const dotHtml = item.key
+            ? `<span class="interp-dot" style="background:${color}"></span>`
+            : `<span class="interp-dot" style="background:var(--accent); border-radius:2px;"></span>`;
+          const rangeTag = item.key ? ` <span style="font-size:10px;font-weight:600;color:${color};opacity:.8;">Range ${item.key}</span>` : '';
+          return `<div class="interp-item">
+            <div class="interp-tag">${dotHtml}<span class="interp-label">${item.label}</span>${rangeTag}</div>
+            <div class="interp-text">${item.text}</div>
+          </div>`;
+        }).join('');
+      }
+
+      function posToggleHtml() {
+        if(activeKeys.length !== 2) return '';
+        const [k1, k2] = activeKeys;
+        const c1 = PALETTE['ABCDEF'.indexOf(k1)] || '#94a3b8';
+        const c2 = PALETTE['ABCDEF'.indexOf(k2)] || '#94a3b8';
+        const pm = window.__positionMode;
+        const cls = (key) => pm?.ip === key ? 'pos-btn active-ip' : 'pos-btn';
+        return `<div class="pos-toggle">
+          <span class="pos-toggle-label">Position:</span>
+          <button class="${cls(k1)}" data-key="${k1}" data-role="ip" style="border-color:${c1}">Range ${k1} IP</button>
+          <button class="${cls(k2)}" data-key="${k2}" data-role="ip" style="border-color:${c2}">Range ${k2} IP</button>
+          ${pm ? `<button class="pos-btn" id="posClearBtn" style="opacity:.5;">✕ clear</button>` : ''}
+        </div>`;
+      }
+
+      function wirePosBtns() {
+        interpPanel.querySelectorAll('.pos-toggle button[data-role]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const key = btn.dataset.key;
+            const otherKey = activeKeys.find(k => k !== key);
+            window.__positionMode = { ip: key, oop: otherKey };
+            renderInterp();
+          });
+        });
+        const clearBtn = interpPanel.querySelector('#posClearBtn');
+        if(clearBtn) clearBtn.addEventListener('click', () => { window.__positionMode = null; renderInterp(); });
+      }
+
+      // ── Claude API call ───────────────────────────────────────────────────
+      async function fetchClaudeInsights(stats, pos) {
+        const apiKey = localStorage.getItem('plo_anthropic_key') || '';
+        if(!apiKey) return null;
+
+        const S = acc.usedSamples || 1;
+        const p = v => Math.round(v * 100) + '%';
+        const flopCtx = (() => {
+          const sel = window.__selectedExploreFtids;
+          if(!sel || (sel.size === 1 && sel.has('any'))) return 'all flop types (aggregate)';
+          return [...sel].join(' ∩ ');
+        })();
+
+        const rangeDescriptions = stats.map(s => {
+          const shape = s.shape;
+          const posLabel = s.key === pos?.ip ? ' (IP)' : s.key === pos?.oop ? ' (OOP)' : '';
+          return `Range ${s.key}${posLabel}: avg equity ${p(s.avgEq)}, nut(≥75%) ${p(s.nutFrac)}, good(40-75%) ${p(s.goodFrac)}, marginal(33-40%) ${p(s.margFrac)}, trash(<33%) ${p(s.trashFrac)}, stddev ${p(s.stdDev)}, shape: ${shape} (polarScore ${s.polarScore.toFixed(2)})`;
+        }).join('\n');
+
+        const posNote = pos ? `\nPosition: Range ${pos.ip} is IP, Range ${pos.oop} is OOP.` : '\nPosition: not specified.';
+        const nRanges = stats.length;
+        const matchup = nRanges === 2 ? `${nRanges}-way heads-up matchup` : `${nRanges}-way multiway pot`;
+
+        const prompt = `You are a PLO strategy coach. Analyze this equity distribution data for a ${matchup} and give specific, actionable strategy heuristics.
+
+STRATEGIC FRAMEWORK (Kassouf, "Beating Fish in Omaha"):
+- Range advantage determines bet sizing: large edge (>12%) → pot (100%); medium edge (8-12%) → ¾-pot; small edge (4-8%) → half-pot
+- Polar ranges (bimodal): bet pot or check — never half-pot. Check medium hands to protect checking range. Bluff selectively from trash
+- Linear/condensed ranges: bet half-pot or quarter-pot at high frequency. Large bets are hard to support
+- NO overbets in PLO. Max bet = pot (100%). Sizes: pot, ¾-pot, half-pot, quarter-pot, block bet (10-25%)
+- OOP block bet (10-25%): key defensive tool on river when flop+turn check through
+- OOP c-bet bluffs work best on dry boards — on dynamic boards IP's wide range makes draws too
+- IP can stab and delay-cbet when OOP checking range is weak/linear
+- Fish have inelastic calling ranges: size down when they fold too often; increment up when they call too much
+- Value threshold on 3-bet line: worst full house or better
+- Only OOP can check-raise. IP can only call or raise a bet.
+
+FLOP CONTEXT: ${flopCtx}
+
+EQUITY DATA:
+${rangeDescriptions}
+${posNote}
+
+Return ONLY a JSON array of 5-7 insights: [{"key":"A","label":"...","text":"..."},...]
+- "key" is the range letter this insight is about, or null for cross-range insights
+- "label" is a short title (2-4 words)
+- "text" is 1-3 sentences of specific, actionable advice referencing the actual numbers
+- Do not include generic advice. Every insight must reference specific numbers from the data.`;
+
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          body: JSON.stringify({
+            model: 'claude-opus-4-6',
+            max_tokens: 1024,
+            messages: [{ role: 'user', content: prompt }]
+          })
+        });
+        if(!resp.ok) throw new Error(`API error ${resp.status}`);
+        const data = await resp.json();
+        const raw = data.content?.[0]?.text || '';
+        const match = raw.match(/\[[\s\S]*\]/);
+        if(!match) throw new Error('No JSON in response');
+        return JSON.parse(match[0]);
+      }
+
+      // ── render ────────────────────────────────────────────────────────────
+      async function renderInterp() {
+        const pos = window.__positionMode || null;
+        const apiKey = localStorage.getItem('plo_anthropic_key') || '';
+
+        // Compute static stats for position toggle + fallback
+        const { stats, items: staticItems } = interpretEquityDist(acc, activeKeys, pos);
+
+        const headerHtml = `
+          <div class="interp-header">
+            <span>Strategy Heuristics</span>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+              ${apiKey ? '<span style="font-size:10px;color:var(--accent);opacity:.7;">claude-opus-4-6</span>' : ''}
+              <input id="interpApiKey" type="password" placeholder="Anthropic API key" autocomplete="off"
+                style="font-size:10px;padding:2px 7px;border-radius:5px;border:1px solid var(--border);background:var(--card);color:var(--text);width:180px;height:20px;"
+                value="${apiKey}">
+            </span>
+          </div>`;
+
+        // Show static immediately, then replace with Claude if key present
+        interpPanel.innerHTML = headerHtml + posToggleHtml() +
+          `<div id="interpItems" class="interp-items">${itemsToHtml(staticItems)}</div>`;
+        wirePosBtns();
+
+        // Wire API key save
+        const keyInput = interpPanel.querySelector('#interpApiKey');
+        if(keyInput) {
+          keyInput.addEventListener('change', () => {
+            localStorage.setItem('plo_anthropic_key', keyInput.value.trim());
+            renderInterp();
+          });
+        }
+
+        if(!apiKey) return;
+
+        // Replace items with loading state
+        const itemsDiv = interpPanel.querySelector('#interpItems');
+        if(itemsDiv) itemsDiv.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:10px 0;opacity:.6;">Generating insights with claude-opus-4-6…</div>`;
+
+        try {
+          const claudeItems = await fetchClaudeInsights(stats, pos);
+          if(claudeItems && Array.isArray(claudeItems)) {
+            const div = interpPanel.querySelector('#interpItems');
+            if(div) div.innerHTML = itemsToHtml(claudeItems);
+          }
+        } catch(e) {
+          const div = interpPanel.querySelector('#interpItems');
+          if(div) div.innerHTML = itemsToHtml(staticItems) +
+            `<div style="font-size:10px;color:var(--bad);margin-top:6px;opacity:.7;">Claude unavailable: ${e.message}</div>`;
+        }
+      }
+
+      renderInterp();
+    }
+  }
 
   hideProgress();
   setStatus("done");
@@ -4608,7 +4847,7 @@ function drawFlopCategoryChart(canvas, activeKeys, acc){
   const ctx = canvas.getContext("2d");
   ctx.scale(DPR, DPR);
 
-  const bg   = isDark?"#0c1728":"#f2f5fb";
+  const bg   = isDark?"#0c1728":"#e8ecf2";
   const lbl  = isDark?"#6b7280":"#9ca3af";
   const cw   = W - PAD.left - PAD.right;
 
@@ -4752,6 +4991,226 @@ function drawFlopCatTooltip(ov, mx, my, cp){
 }
 
 // WIN_CAT_DEFS ordered weakest→strongest for bar display.
+// ── Equity distribution interpreter ──────────────────────────────────────────
+// Heuristics grounded in PLO range-advantage theory (Kassouf, "Beating Fish in Omaha")
+// pos: { ip: 'A', oop: 'B' } or null
+function interpretEquityDist(acc, activeKeys, pos) {
+  const S = acc.usedSamples || 1;
+  const PALETTE = ["#60a5fa","#f472b6","#22c55e","#f59e0b","#a78bfa","#fb923c"];
+  const p = v => Math.round(v * 100) + '%';
+
+  const stats = activeKeys.map((key, ri) => {
+    const c = acc.counters[ri];
+    const bins = c.bins || new Array(20).fill(0);
+    const bt = bins.reduce((s,v)=>s+v,0) || 1;
+    const avgEq    = c.sumEq / S;
+    const nutFrac  = c.nNut  / S;   // ≥75% equity
+    const goodFrac = c.nGood / S;   // 40–75%
+    const margFrac = c.nMarg / S;   // 33–40%
+    const trashFrac = c.nTrash / S; // <33%
+    let variance = 0;
+    for(let i=0;i<20;i++){ const eq=(i+0.5)/20; variance+=(bins[i]/bt)*(eq-avgEq)**2; }
+    const stdDev = Math.sqrt(variance);
+    const lowSum  = bins.slice(0,8).reduce((s,v)=>s+v,0);   // 0–40%  (8 bins)
+    const midSum  = bins.slice(8,15).reduce((s,v)=>s+v,0);  // 40–75% (7 bins)
+    const highSum = bins.slice(15,20).reduce((s,v)=>s+v,0); // 75–100%(5 bins)
+    // Normalize each region by its expected share under a uniform distribution
+    // so polarScore=0 means flat, >0 means extremes overrepresented (bimodal), <0 condensed
+    const lowDens  = (lowSum  / bt) / (8/20);
+    const midDens  = (midSum  / bt) / (7/20);
+    const highDens = (highSum / bt) / (5/20);
+    const polarScore = (lowDens + highDens) / 2 - midDens;
+    let shape;
+    if     (polarScore >  0.30) shape = 'polarized';
+    else if(polarScore < -0.25) shape = 'condensed';
+    else if(avgEq > 0.58) shape = 'strong';
+    else if(avgEq < 0.42) shape = 'weak';
+    else shape = 'balanced';
+    const color = PALETTE['ABCDEF'.indexOf(key)] || '#94a3b8';
+    return { key, color, avgEq, nutFrac, goodFrac, margFrac, trashFrac, stdDev, polarScore, shape };
+  });
+
+  const items = [];
+  function add(key, label, text) { items.push({ key, label, text }); }
+
+  // PLO bet sizing scale (no overbets in PLO)
+  // pot=100%, ¾-pot=75%, half-pot=50%, quarter-pot=25%, block=10–15%
+  function betSizeLabel(nutFrac) {
+    if(nutFrac >= 0.18) return 'pot (100%)';
+    if(nutFrac >= 0.10) return '¾-pot (75%)';
+    if(nutFrac >= 0.05) return 'half-pot (50%)';
+    return 'quarter-pot (25%)';
+  }
+
+  // Helper: position label for a key
+  const ipKey  = pos?.ip  || null;
+  const oopKey = pos?.oop || null;
+  function posTag(key) {
+    if(key === ipKey)  return ' (IP)';
+    if(key === oopKey) return ' (OOP)';
+    return '';
+  }
+  function isIP(key)  { return key === ipKey; }
+  function isOOP(key) { return key === oopKey; }
+  const hasPos = !!(ipKey && oopKey);
+
+  // ── per-range insights ───────────────────────────────────────────────────
+  for(const s of stats) {
+    const R = 'Range ' + s.key + posTag(s.key);
+    const sz = betSizeLabel(s.nutFrac);
+    const ip  = isIP(s.key);
+    const oop = isOOP(s.key);
+
+    if(s.shape === 'polarized') {
+      let extra = '';
+      if(oop) extra = ' As OOP, be cautious about large bets on dynamic boards — IP\'s wide calling range makes strong draws too, and your bluffs will often face a call. Reserve pot-sized bets for clear value; check-raise selectively with trash as a bluff.';
+      else if(ip) extra = ' As IP, your polar range is at its most powerful — bet pot with value, check back medium hands for showdown value. Delay-cbet aggressively when OOP checks, especially on turns where your range is stronger than theirs.';
+      add(s.key, 'Polar construction',
+        `${R} is bimodal — ${p(s.trashFrac)} weak, ${p(s.nutFrac)} nut equity. Bet ${sz} with value; check medium-strength hands to protect the checking range. Bluff selectively from trash. Avoid half-pot bets — they reveal the bimodal structure and give opponents correct odds on medium equity.${extra}`);
+
+    } else if(s.shape === 'condensed') {
+      let extra = '';
+      if(oop) extra = ' As OOP with a condensed range, your checking range is predictably weak — IP can stab and delay-cbet freely. Protect it by mixing medium hands into checks. Small c-bets (half-pot) at high frequency are your most +EV line.';
+      else if(ip) extra = ' As IP with a condensed range, check back frequently to realize equity at showdown. Small stabs (quarter- to half-pot) are profitable when OOP shows weakness.';
+      add(s.key, 'Linear/condensed',
+        `${R} clusters around ${p(s.avgEq)} equity (low variance, σ≈${p(s.stdDev)}). Linear-style range — most hands have similar strength. Preferred: half-pot or quarter-pot at high frequency. Large bets are hard to support.${extra}`);
+
+    } else if(s.shape === 'strong') {
+      let extra = '';
+      if(oop) extra = ' As OOP with range advantage, prefer ¾-pot over pot on most boards — pot-sized bets risk an IP raise that bloats the pot while you\'re at a positional disadvantage for the rest of the hand. Exception: very dry boards where IP\'s wide range has little equity and is unlikely to raise.';
+      else if(ip) extra = ' As IP with range advantage, pot-sized bets are sustainable and put maximum pressure on OOP. Multi-street barrels are highly profitable — OOP has no position to realize equity or make profitable floats.';
+      add(s.key, 'Range advantage',
+        `${R} has dominant equity (avg ${p(s.avgEq)}, ${p(s.nutFrac)} nut frequency). Range advantage supports ${sz} bets. Exception: very dry or monotone boards favor high-frequency small bets over one large bet.${extra}`);
+
+    } else if(s.shape === 'weak') {
+      let extra = '';
+      if(oop) extra = ' As OOP with equity deficit, the block bet (10–25%) is your primary weapon on the river when the board checks through flop and turn. It prevents IP from betting their full range cheaply, and sometimes folds out showdown-value hands. Avoid multi-street bluffs — IP reaches later streets with strong ranges.';
+      else if(ip) extra = ' As IP with equity deficit, check back frequently to take free cards and avoid bloating pots. Use small stabs only with clear fold equity; don\'t commit to multi-street bluffs without improving equity.';
+      add(s.key, 'Equity deficit',
+        `${R} is structurally weak (avg ${p(s.avgEq)}, ${p(s.trashFrac)} trash). Check-heavy line preferred. When betting, use quarter-pot or block bets (10–25%) — cheap way to represent strength and prevent free bets.${extra}`);
+
+    } else {
+      let extra = '';
+      if(ip)  extra = ' As IP, check back mediocre hands freely — you realize equity well at showdown. Small stabs when OOP checks are often profitable.';
+      if(oop) extra = ' As OOP, mix half-pot c-bets with checks on medium-equity boards. A checking range that contains medium-strength hands is much harder to exploit.';
+      add(s.key, 'Balanced',
+        `${R} is evenly distributed (avg ${p(s.avgEq)}, σ≈${p(s.stdDev)}). No strong sizing signal — mix half-pot and ¾-pot depending on board texture.${extra}`);
+    }
+
+    // Exploitable checking range
+    if(s.trashFrac >= 0.38) {
+      const counter = oop
+        ? 'As OOP, this is a serious leak — IP can stab every time you check and delay-cbet every turn. Mix more medium-strength hands into your checking range.'
+        : ip
+        ? 'Opponents can probe liberally when you check back. Mix in checks with medium-equity hands to protect the range.'
+        : 'Opponents can exploit this with probes and delay-cbets. Include more medium-strength hands in the checking range.';
+      add(s.key, 'Checking range exposed',
+        `${R} has ${p(s.trashFrac)} trash — when this range checks, the checking range is linearly constructed and weak. ${counter}`);
+    }
+
+    // High variance
+    if(s.stdDev >= 0.22) {
+      const posNote = oop
+        ? 'OOP with high variance is especially difficult — many hands in the 33–50% zone face tough decisions facing bets without seeing a free card.'
+        : ip
+        ? 'IP with high variance benefits from position — you can check back marginal hands and see runouts cheaply.'
+        : 'Position matters significantly with this shape.';
+      add(s.key, 'High variance',
+        `${R} has a wide equity spread (σ≈${p(s.stdDev)}). Individual decisions will often be marginal. ${posNote}`);
+    }
+  }
+
+  // ── cross-range insights ─────────────────────────────────────────────────
+  if(activeKeys.length === 2) {
+    const [a, b] = stats;
+    const eqDiff = a.avgEq - b.avgEq;
+    const adv  = eqDiff >= 0 ? a : b;
+    const dis  = eqDiff >= 0 ? b : a;
+    const diff = Math.abs(eqDiff);
+
+    // Range advantage → bet sizing (book's core thesis)
+    if(diff >= 0.04) {
+      const sz = diff >= 0.14 ? 'pot (100%)' : diff >= 0.08 ? '¾-pot (75%)' : 'half-pot (50%)';
+      let posNote = '';
+      if(hasPos) {
+        if(isIP(adv.key))  posNote = ` IP position amplifies this — ${adv.key} can apply sustained multi-street pressure and OOP cannot float profitably.`;
+        if(isOOP(adv.key)) posNote = ` Despite positional disadvantage, OOP equity edge is significant. ${adv.key} should c-bet and probe aggressively on safe runouts; prefer ¾-pot over pot to avoid IP check-raises.`;
+      }
+      add(null, 'Range advantage → sizing',
+        `Range ${adv.key}${posTag(adv.key)} has a +${p(diff)} equity edge. Range advantage theory: larger edge supports larger bet size — ${sz} is sustainable here. Range ${dis.key}${posTag(dis.key)} should prioritize pot control.${posNote}`);
+    }
+
+    // Polar vs merged matchup
+    if((a.shape==='polarized' && (b.shape==='condensed'||b.shape==='balanced')) ||
+       (b.shape==='polarized' && (a.shape==='condensed'||a.shape==='balanced'))) {
+      const pol = a.shape==='polarized' ? a : b, mer = pol===a ? b : a;
+      let posNote = '';
+      if(hasPos) {
+        if(isIP(pol.key))  posNote = ` IP polar range is maximally exploitative — ${pol.key} can bet pot and check back with medium hands; OOP ${mer.key} cannot profitably raise without a strong hand.`;
+        if(isOOP(pol.key)) posNote = ` OOP polar range must be careful — IP ${mer.key} can float medium equity and realize it. ${pol.key} should pot-bet clear value and check-raise bluff selectively rather than 3-barrel bluffing.`;
+      }
+      add(null, 'Polar vs linear',
+        `${pol.key}${posTag(pol.key)} is polar; ${mer.key}${posTag(mer.key)} is linear/merged. ${pol.key} should bet pot or check — never half-pot. ${mer.key}'s best counter: small check-raises (~2.5x) as a cheap bluff/thin-value tool.${posNote}`);
+    }
+
+    if(a.shape==='polarized' && b.shape==='polarized') {
+      add(null, 'Both polar',
+        `Both ranges are polarized. Pot/check dynamic — medium bets are exploitable by either side.${hasPos ? ` IP (${ipKey}) has the advantage: can bet large and then check back, denying OOP (${oopKey}) the option to bluff when IP checks.` : ''}`);
+    }
+
+    // IP/OOP specific lines when position is set
+    if(hasPos) {
+      const oopStat = stats.find(s => s.key === oopKey);
+      const ipStat  = stats.find(s => s.key === ipKey);
+
+      // OOP c-bet caution on dynamic boards (book's key insight)
+      if(oopStat && oopStat.shape !== 'strong') {
+        add(null, 'OOP c-bet caution',
+          `OOP range ${oopKey} (avg ${p(oopStat.avgEq)}) on dynamic boards: a wide IP range doesn't mean lots of air — IP also makes draws. C-bet bluffs OOP work best on dry boards (ace-high, low paired boards) where IP's wide range misses. On connected or two-tone boards, IP floats with draws and your c-bet bluffs run into too many semi-bluff callers.`);
+      }
+
+      // Stab / delay-cbet opportunity for IP
+      if(ipStat && oopStat && oopStat.trashFrac >= 0.30) {
+        add(null, `IP stab / delay-cbet`,
+          `OOP range ${oopKey} has ${p(oopStat.trashFrac)} trash — a weak checking range. IP range ${ipKey} should stab the flop when OOP checks, and delay-cbet liberally on the turn when OOP misses their c-bet opportunity. These exploits are most effective when OOP's checking range is linearly constructed (air only).`);
+      }
+
+      // Block bet reminder for OOP
+      if(oopStat) {
+        add(null, 'OOP block bet',
+          `Key OOP tool for Range ${oopKey}: when flop and turn check through, lead river for 10–25% pot. This block bet prevents IP (${ipKey}) from betting their full range (including strong hands), occasionally wins the pot with weak hands that can't call a bet, and keeps pot small with medium equity. Against opponents who fold too often to small bets, bet even wider here.`);
+      }
+    }
+
+    // Nut gap → value threshold
+    const nutDiff = a.nutFrac - b.nutFrac;
+    if(Math.abs(nutDiff) >= 0.10) {
+      const na = nutDiff>0?a:b, nd = nutDiff>0?b:a;
+      add(null, 'Nut gap → value threshold',
+        `${na.key}${posTag(na.key)} has ${p(na.nutFrac)} nut equity vs ${p(nd.nutFrac)} for ${nd.key}${posTag(nd.key)}. Value threshold for ${nd.key} on a three-bet line: worst full house or better. Thin value from ${nd.key} runs into the top of ${na.key}'s range.`);
+    }
+
+    // MDF
+    const canDefend = dis.nutFrac + dis.goodFrac;
+    const mdfCoverage =
+      canDefend >= 0.67 ? 'covers all standard sizes (half-pot through pot)' :
+      canDefend >= 0.57 ? 'covers half-pot and ¾-pot, but not pot-sized bets' :
+      canDefend >= 0.50 ? 'covers half-pot only — pot-sized bets are nearly auto-profitable' :
+                          'cannot meet MDF even at half-pot — any bet is close to auto-profitable';
+    const oopMdfNote = hasPos && isOOP(dis.key)
+      ? ` OOP faces an additional challenge: even when meeting MDF on the flop, future streets OOP are harder to navigate — effective defense frequency is higher than raw MDF implies.`
+      : '';
+    add(null, 'MDF / defense',
+      `${dis.key}${posTag(dis.key)} must defend ~50% vs pot, ~57% vs ¾-pot, ~67% vs half-pot. With ${p(canDefend)} defensible equity, ${dis.key} ${mdfCoverage}. Marginal hands (33–40%, ${p(dis.margFrac)} of range) fold to large bets and call small bets.${oopMdfNote}`);
+
+    // Recreational players
+    add(null, 'Recreational player adjustments',
+      `Inelastic calling ranges: if opponent folds too often → use quarter-pot or block bets to steal cheaply. If opponent calls too much → increment from half-pot toward pot. Don't jump straight to max — train them gradually.`);
+  }
+
+  return { stats, items };
+}
+
 // idx = winCats array slot (0-8 = __eval5 category; 9 = Trips, split from category 3)
 const WIN_CAT_DEFS = [
   {idx:0, label:'High card', color:'#6b7280'},
@@ -4766,7 +5225,7 @@ const WIN_CAT_DEFS = [
   {idx:8, label:'Str. flush',color:'#10b981'},
 ];
 
-function drawWinCatChart(canvas, activeKeys, acc){
+function drawWinCatChart(canvas, activeKeys, acc, mode='wins'){
   const isDark = document.body.classList.contains("dark");
   const DPR = window.devicePixelRatio || 1;
   const W = Math.min(1200, (canvas.parentElement||canvas).clientWidth || 800);
@@ -4788,16 +5247,23 @@ function drawWinCatChart(canvas, activeKeys, acc){
   const ctx = canvas.getContext("2d");
   ctx.scale(DPR, DPR);
 
-  const bg  = isDark?"#0c1728":"#f2f5fb";
+  const bg  = isDark?"#0c1728":"#e8ecf2";
   const lbl = isDark?"#6b7280":"#9ca3af";
   const cw  = W - PAD.left - PAD.right;
 
   ctx.fillStyle=bg; ctx.beginPath(); ctx.roundRect(0,0,W,H,8); ctx.fill();
 
+  // Total wins per range; max determines bar scale (100% = most wins)
+  const rangeWinTotals = activeKeys.map((_,ri) => (acc.counters[ri]?.winCats||[]).reduce((s,v)=>s+v,0)||0);
+  const maxTotalWins = Math.max(1, ...rangeWinTotals);
+  // For "% of samples": true fraction of all simulation outcomes
+  const totalAllWins = rangeWinTotals.reduce((s,v)=>s+v,0) || 1;
+
   for(let ri=0; ri<nRanges; ri++){
     const wc = acc.counters[ri]?.winCats;
     if(!wc) continue;
-    const totalWins = wc.reduce((s,v)=>s+v,0) || 1;
+    const totalWins = rangeWinTotals[ri] || 1;
+    const scale = totalWins / maxTotalWins; // fraction of full width this range uses
     const y = PAD.top + ri*(BAR_H+BAR_GAP);
 
     ctx.fillStyle=lbl; ctx.font="bold 11px system-ui,sans-serif";
@@ -4805,9 +5271,10 @@ function drawWinCatChart(canvas, activeKeys, acc){
     ctx.fillText("Range "+activeKeys[ri], PAD.left-6, y+BAR_H/2);
 
     let x = PAD.left;
+    const barCw = scale * cw; // actual pixel width available for this range's bar
     for(const def of visibleCats){
-      const pct = (wc[def.idx]||0) / totalWins;
-      const bw  = pct * cw;
+      const winPct = (wc[def.idx]||0) / totalWins;
+      const bw  = winPct * barCw;
       if(bw < 0.5) continue;
       ctx.fillStyle = def.color;
       ctx.beginPath();
@@ -4815,10 +5282,12 @@ function drawWinCatChart(canvas, activeKeys, acc){
       ctx.roundRect(x, y, bw, BAR_H, [isFirst?4:0, isLast?4:0, isLast?4:0, isFirst?4:0]);
       ctx.fill();
       if(bw >= 26){
+        const denom = mode === 'samples' ? totalAllWins : totalWins;
+        const labelPct = (wc[def.idx]||0) / denom;
         ctx.fillStyle="rgba(255,255,255,0.92)";
         ctx.font="bold 9px system-ui,sans-serif";
         ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText(Math.round(pct*100)+"%", x+bw/2, y+BAR_H/2);
+        ctx.fillText(Math.round(labelPct*100)+"%", x+bw/2, y+BAR_H/2);
       }
       x += bw;
     }
@@ -4843,7 +5312,7 @@ function drawWinCatChart(canvas, activeKeys, acc){
   }
 
   // Hover overlay
-  canvas.__winCatParams = {isDark, DPR, W, H, PAD, BAR_H, BAR_GAP, nRanges, activeKeys, acc, cw, visibleCats};
+  canvas.__winCatParams = {isDark, DPR, W, H, PAD, BAR_H, BAR_GAP, nRanges, activeKeys, acc, cw, visibleCats, mode, totalAllWins, rangeWinTotals, maxTotalWins};
   const parent = canvas.parentElement;
   if(parent) parent.style.position='relative';
   let ov = canvas.__overlay;
@@ -4872,7 +5341,7 @@ function drawWinCatChart(canvas, activeKeys, acc){
 }
 
 function drawWinCatTooltip(ov, mx, my, cp){
-  const {isDark,DPR,W,H,PAD,BAR_H,BAR_GAP,nRanges,activeKeys,acc,cw,visibleCats}=cp;
+  const {isDark,DPR,W,H,PAD,BAR_H,BAR_GAP,nRanges,activeKeys,acc,cw,visibleCats,mode,totalAllWins,rangeWinTotals,maxTotalWins}=cp;
   const ctx=ov.getContext('2d');
   ctx.clearRect(0,0,ov.width,ov.height);
   const ri = Math.floor((my-PAD.top)/(BAR_H+BAR_GAP));
@@ -4880,27 +5349,33 @@ function drawWinCatTooltip(ov, mx, my, cp){
   const rowY = PAD.top+ri*(BAR_H+BAR_GAP);
   if(my<rowY||my>rowY+BAR_H||mx<PAD.left||mx>PAD.left+cw) return;
   const wc = acc.counters[ri]?.winCats; if(!wc) return;
-  const totalWins = wc.reduce((s,v)=>s+v,0)||1;
-  // find hovered segment
+  const totalWins = rangeWinTotals[ri]||1;
+  const scale = totalWins / maxTotalWins;
+  const barCw = scale * cw;
+  const modeLabel = mode==='samples' ? 'of samples' : 'of wins';
+  // find hovered segment — sized by scaled bar width
+  if(mx > PAD.left + barCw) return; // hovering empty remainder
   let x=PAD.left, hitDef=null;
   for(const def of visibleCats){
-    const bw=(wc[def.idx]||0)/totalWins*cw;
+    const bw=(wc[def.idx]||0)/totalWins*barCw;
     if(mx<=x+bw){ hitDef=def; break; }
     x+=bw;
   }
   if(!hitDef) return;
   ctx.save(); ctx.scale(DPR,DPR);
-  const pct=Math.round((wc[hitDef.idx]||0)/totalWins*100);
+  const denom = mode==='samples' ? totalAllWins : totalWins;
+  const pct=Math.round((wc[hitDef.idx]||0)/denom*100);
   const lines=[
     {text:hitDef.label, bold:true, color:hitDef.color},
-    {text:'Range '+activeKeys[ri]+': '+pct+'% of wins', bold:false, color:isDark?'#f9fafb':'#111827'}
+    {text:'Range '+activeKeys[ri]+': '+pct+'% '+modeLabel, bold:false, color:isDark?'#f9fafb':'#111827'}
   ];
   for(let r2=0;r2<nRanges;r2++){
     if(r2===ri) continue;
     const wc2=acc.counters[r2]?.winCats;
-    const tot2=(wc2||[]).reduce((s,v)=>s+v,0)||1;
-    const p2=wc2?Math.round((wc2[hitDef.idx]||0)/tot2*100):0;
-    lines.push({text:'Range '+activeKeys[r2]+': '+p2+'% of wins', bold:false, color:isDark?'#9ca3af':'#6b7280'});
+    const tot2=rangeWinTotals[r2]||1;
+    const denom2 = mode==='samples' ? totalAllWins : tot2;
+    const p2=wc2?Math.round((wc2[hitDef.idx]||0)/denom2*100):0;
+    lines.push({text:'Range '+activeKeys[r2]+': '+p2+'% '+modeLabel, bold:false, color:isDark?'#9ca3af':'#6b7280'});
   }
   ctx.font='11px system-ui,sans-serif';
   let maxW=0;
@@ -4921,7 +5396,7 @@ function drawWinCatTooltip(ov, mx, my, cp){
   ctx.restore();
 }
 
-function drawEquityDistChart(canvas, activeKeys, acc, palette, mode){
+function drawEquityDistChart(canvas, activeKeys, acc, palette, mode, normalize=true){
   const isDark = document.body.classList.contains("dark");
   const DPR = window.devicePixelRatio || 1;
   const W = Math.min(1200, (canvas.parentElement||canvas).clientWidth || 800);
@@ -4933,7 +5408,7 @@ function drawEquityDistChart(canvas, activeKeys, acc, palette, mode){
   ctx.scale(DPR, DPR);
   const cw = W-PAD.left-PAD.right, ch = H-PAD.top-PAD.bottom;
 
-  const bg   = isDark?"#0c1728":"#f2f5fb";
+  const bg   = isDark?"#0c1728":"#e8ecf2";
   const grid = isDark?"rgba(255,255,255,.06)":"rgba(0,0,0,.07)";
   const lbl  = isDark?"#6b7280":"#9ca3af";
 
@@ -4946,9 +5421,10 @@ function drawEquityDistChart(canvas, activeKeys, acc, palette, mode){
     return {key:k, bins, color:palette[i%palette.length]};
   });
 
-  // Per-range Y normalization: each range's peak = 1 (shapes comparable regardless of range size)
+  // Y normalization: per-range (each peak=1) or global (shared peak across all ranges)
+  const globalPeak = Math.max(1, ...rangeData.flatMap(rd=>rd.bins));
   for(const rd of rangeData){
-    rd.peak = Math.max(1, ...rd.bins);
+    rd.peak = normalize ? Math.max(1, ...rd.bins) : globalPeak;
   }
 
   // Auto-scale X: find actual data bounds with 1-bin padding
@@ -6953,7 +7429,7 @@ self.onmessage=function(e){
   });
 })();
 
-// ── Natural Language → ORS Translator ────────────────────────────────────────
+/* ── Natural Language → ORS Translator (commented out) ──────────────────────
 
 (function initNLTranslator() {
   const KEY_STORE      = 'plo_anthropic_key';
@@ -7212,6 +7688,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no extra text):
   }
   updateExampleCount();
 })();
+── End NL Translator ── */
 </script>
 </body>
 </html>
