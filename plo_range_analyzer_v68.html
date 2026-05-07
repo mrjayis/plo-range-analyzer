@@ -4221,7 +4221,7 @@ async function computeMultiwayBucketSamples(handsArr, samples, runouts, forcedFl
   const fullDeck = buildFullDeck();
   const rng = Math.random;
   const samplers = handsArr.map(h => __buildSampler(h, rng));
-  const counters = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nWeak:0, sumEq:0, bins:new Array(20).fill(0), winCats:new Array(10).fill(0)}));
+  const counters = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nTrash:0, sumEq:0, bins:new Array(20).fill(0), winCats:new Array(10).fill(0)}));
   let usedSamples = 0, attempts = 0;
   while (usedSamples < samples && attempts < samples * 100) {
     attempts++;
@@ -4279,9 +4279,9 @@ async function computeMultiwayBucketSamples(handsArr, samples, runouts, forcedFl
       counters[i].sumEq += eq;
       counters[i].bins[Math.min(19, Math.floor(eq * 20))]++;
       if      (eq >= 0.75) counters[i].nNut++;
-      else if (eq >= 0.50) counters[i].nGood++;
+      else if (eq >= 0.40) counters[i].nGood++;
       else if (eq >= 0.33) counters[i].nMarg++;
-      else                 counters[i].nWeak++;
+      else                 counters[i].nTrash++;
       for(let c=0;c<10;c++) counters[i].winCats[c] += winCatCounts[i][c];
     }
     usedSamples++;
@@ -4347,7 +4347,7 @@ async function runFlopStrengthSamples(handsArr, samples, forcedFlops, filterIds,
   const rng = Math.random;
   const samplers = handsArr.map(h => __buildSampler(h, rng));
   const counters = Array.from({length:nRanges}, ()=>({
-    nNut:0, nGood:0, nMarg:0, nWeak:0, sumEq:0,
+    nNut:0, nGood:0, nMarg:0, nTrash:0, sumEq:0,
     bins: new Array(20).fill(0),
     cats: new Array(nCats).fill(0)
   }));
@@ -4376,9 +4376,9 @@ async function runFlopStrengthSamples(handsArr, samples, forcedFlops, filterIds,
       counters[i].cats[catIdx]++;
       counters[i].bins[Math.min(19, Math.floor(score*20))]++;
       if     (score >= 0.75) counters[i].nNut++;
-      else if(score >= 0.50) counters[i].nGood++;
+      else if(score >= 0.40) counters[i].nGood++;
       else if(score >= 0.33) counters[i].nMarg++;
-      else                   counters[i].nWeak++;
+      else                   counters[i].nTrash++;
     }
     usedSamples++;
     if(usedSamples%50===0){ if(progressCb) progressCb(usedSamples/samples); await new Promise(r=>setTimeout(r,0)); }
@@ -4471,7 +4471,7 @@ async function computeEquityBucketsForSelection(){
       __bucketAccum.counters[i].nNut   += raw.counters[i].nNut;
       __bucketAccum.counters[i].nGood  += raw.counters[i].nGood;
       __bucketAccum.counters[i].nMarg  += raw.counters[i].nMarg;
-      __bucketAccum.counters[i].nWeak += raw.counters[i].nWeak;
+      __bucketAccum.counters[i].nTrash += raw.counters[i].nTrash;
       __bucketAccum.counters[i].sumEq  += raw.counters[i].sumEq;
       if(raw.counters[i].bins) for(let b=0;b<20;b++) __bucketAccum.counters[i].bins[b] = (__bucketAccum.counters[i].bins[b]||0) + (raw.counters[i].bins[b]||0);
       if(raw.counters[i].cats) for(let b=0;b<FLOP_CATS.length;b++) __bucketAccum.counters[i].cats[b] = (__bucketAccum.counters[i].cats[b]||0) + (raw.counters[i].cats[b]||0);
@@ -4490,7 +4490,7 @@ async function computeEquityBucketsForSelection(){
     nut:   usedSamples > 0 ? c.nNut   / usedSamples : 0,
     good:  usedSamples > 0 ? c.nGood  / usedSamples : 0,
     marg:  usedSamples > 0 ? c.nMarg  / usedSamples : 0,
-    weak: usedSamples > 0 ? c.nWeak / usedSamples : 0,
+    trash: usedSamples > 0 ? c.nTrash / usedSamples : 0,
   }));
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -4504,12 +4504,12 @@ async function computeEquityBucketsForSelection(){
     { key:"nut",   label:"Set+/Str/Flush", color:"#22c55e" },
     { key:"good",  label:"Pair+Draw/2pr+",  color:"#60a5fa" },
     { key:"marg",  label:"Two pair",        color:"#f59e0b" },
-    { key:"weak", label:"Pair/Air",        color:"#f87171" },
+    { key:"trash", label:"Pair/Air",        color:"#f87171" },
   ] : [
     { key:"nut",   label:"Nut",   color:"#22c55e" },
     { key:"good",  label:"Good",  color:"#60a5fa" },
     { key:"marg",  label:"Marg",  color:"#f59e0b" },
-    { key:"weak", label:"Weak", color:"#f87171" },
+    { key:"trash", label:"Trash", color:"#f87171" },
   ];
 
   const nRanges = activeKeys.length;
@@ -4570,7 +4570,7 @@ async function computeEquityBucketsForSelection(){
   const RANGE_PALETTE = ["#60a5fa","#f472b6","#22c55e","#f59e0b","#a78bfa","#fb923c"];
 
   const chartTitle = isFlopMode ? "Flop made-hand strength" : "Equity distribution";
-  const normToggle = !isFlopMode ? `<button type="button" id="eqNormToggle" class="btn-xs" style="font-size:10px; padding:0 7px; height:18px; opacity:.7;" title="Toggle per-range normalization">${window.__eqNormalized!==false?'Normalized':'Absolute'}</button><button type="button" id="eqAxisToggle" class="btn-xs" style="font-size:10px; padding:0 7px; height:18px; opacity:.7;" title="Toggle equity % axis">${window.__eqAxisFlipped?'equity: Y':'equity: X'}</button><button type="button" id="eqFreqToggle" class="btn-xs" style="font-size:10px; padding:0 7px; height:18px; opacity:.7;" title="Toggle frequency axis unit">${window.__eqFreqPct?'% of range':'frequency'}</button>` : '';
+  const normToggle = !isFlopMode ? `<button type="button" id="eqNormToggle" class="btn-xs" style="font-size:10px; padding:0 7px; height:18px; opacity:.7;" title="Toggle per-range normalization">${window.__eqNormalized!==false?'Normalized':'Absolute'}</button><button type="button" id="eqAxisToggle" class="btn-xs" style="font-size:10px; padding:0 7px; height:18px; opacity:.7;" title="Toggle equity % axis">${window.__eqAxisFlipped?'equity: Y':'equity: X'}</button>` : '';
   const winCatMode = window.__winCatMode || 'wins';
   const winCatSection = !isFlopMode ? `
     <div style="display:flex;align-items:center;gap:7px;margin:10px 0 4px;">
@@ -4594,7 +4594,7 @@ async function computeEquityBucketsForSelection(){
   const distCanvas = document.getElementById("equityDistCanvas");
   if(distCanvas){
     if(isFlopMode) drawFlopCategoryChart(distCanvas, activeKeys, acc);
-    else drawEquityDistChart(distCanvas, activeKeys, acc, RANGE_PALETTE, bucketMode, window.__eqNormalized!==false, window.__eqAxisFlipped||false, window.__eqFreqPct||false);
+    else drawEquityDistChart(distCanvas, activeKeys, acc, RANGE_PALETTE, bucketMode, window.__eqNormalized!==false, window.__eqAxisFlipped||false);
   }
 
   const winCatCanvas = document.getElementById("winCatCanvas");
@@ -4617,7 +4617,7 @@ async function computeEquityBucketsForSelection(){
       window.__eqNormalized = (window.__eqNormalized === false) ? true : false;
       normBtn.textContent = window.__eqNormalized ? 'Normalized' : 'Absolute';
       const c = document.getElementById("equityDistCanvas");
-      if(c) drawEquityDistChart(c, activeKeys, acc, RANGE_PALETTE, bucketMode, window.__eqNormalized, window.__eqAxisFlipped||false, window.__eqFreqPct||false);
+      if(c) drawEquityDistChart(c, activeKeys, acc, RANGE_PALETTE, bucketMode, window.__eqNormalized, window.__eqAxisFlipped||false);
     });
   }
 
@@ -4627,17 +4627,7 @@ async function computeEquityBucketsForSelection(){
       window.__eqAxisFlipped = !window.__eqAxisFlipped;
       axisBtn.textContent = window.__eqAxisFlipped ? 'equity: Y' : 'equity: X';
       const c = document.getElementById("equityDistCanvas");
-      if(c) drawEquityDistChart(c, activeKeys, acc, RANGE_PALETTE, bucketMode, window.__eqNormalized!==false, window.__eqAxisFlipped, window.__eqFreqPct||false);
-    });
-  }
-
-  const freqBtn = document.getElementById("eqFreqToggle");
-  if(freqBtn){
-    freqBtn.addEventListener('click', () => {
-      window.__eqFreqPct = !window.__eqFreqPct;
-      freqBtn.textContent = window.__eqFreqPct ? '% of range' : 'frequency';
-      const c = document.getElementById("equityDistCanvas");
-      if(c) drawEquityDistChart(c, activeKeys, acc, RANGE_PALETTE, bucketMode, window.__eqNormalized!==false, window.__eqAxisFlipped||false, window.__eqFreqPct);
+      if(c) drawEquityDistChart(c, activeKeys, acc, RANGE_PALETTE, bucketMode, window.__eqNormalized!==false, window.__eqAxisFlipped);
     });
   }
 
@@ -4988,7 +4978,7 @@ function drawWinCatTooltip(ov, mx, my, cp){
   ctx.restore();
 }
 
-function drawEquityDistChart(canvas, activeKeys, acc, palette, mode, normalize=true, axisFlipped=false, freqPct=false){
+function drawEquityDistChart(canvas, activeKeys, acc, palette, mode, normalize=true, axisFlipped=false){
   const isDark = document.body.classList.contains("dark");
   const DPR = window.devicePixelRatio || 1;
   const W = Math.min(1200, (canvas.parentElement||canvas).clientWidth || 800);
@@ -5000,31 +4990,17 @@ function drawEquityDistChart(canvas, activeKeys, acc, palette, mode, normalize=t
   const rangeData = activeKeys.map((k,i)=>{
     const c=acc.counters[i];
     const bins=c.bins||new Array(N).fill(0);
-    const total = bins.reduce((s,v)=>s+v,0)||1;
-    // pcts: fraction of this range that falls in each bin
-    const pcts = bins.map(b=>b/total);
-    return {key:k, bins, pcts, total, color:palette[i%palette.length]};
+    return {key:k, bins, color:palette[i%palette.length]};
   });
-
-  // Determine the "height" values for each range depending on mode
-  // freqPct=false: normalize bins relative to peak (shape only)
-  // freqPct=true: use actual range %, shared scale across all ranges
   const globalPeak = Math.max(1, ...rangeData.flatMap(rd=>rd.bins));
-  const globalPctPeak = Math.max(1e-9, ...rangeData.flatMap(rd=>rd.pcts));
   for(const rd of rangeData){
-    if(freqPct){
-      rd.vals = rd.pcts;
-      rd.peak = globalPctPeak;  // always absolute scale in pct mode
-    } else {
-      rd.vals = rd.bins.map(b=>b/(normalize ? Math.max(1,...rd.bins) : globalPeak));
-      rd.peak = 1;
-    }
+    rd.peak = normalize ? Math.max(1, ...rd.bins) : globalPeak;
   }
 
-  // ── FLIPPED: sorted equity curve — X = rank percentile, Y = equity % ────
+  // ── FLIPPED: equity % on Y axis, frequency on X ──────────────────────
   if(axisFlipped && mode !== "flop"){
     const H = 280;
-    const PAD = {top:24, right:20, bottom:36, left:48};
+    const PAD = {top:12, right:20, bottom:28, left:40};
     canvas.width = W*DPR; canvas.height = H*DPR;
     canvas.style.width = W+"px"; canvas.style.height = H+"px";
     const ctx = canvas.getContext("2d");
@@ -5033,65 +5009,82 @@ function drawEquityDistChart(canvas, activeKeys, acc, palette, mode, normalize=t
 
     ctx.fillStyle=bg; ctx.beginPath(); ctx.roundRect(0,0,W,H,8); ctx.fill();
 
-    // Map rank percentile (0–100) → X, equity fraction (0–1) → Y
-    function px(rankPct){ return PAD.left + (rankPct/100)*cw; }
-    function py(eq){ return PAD.top + (1-eq)*ch; }
+    // Auto-scale Y: same bin-padding logic as original X scaling
+    let yMinBin=N-1, yMaxBin=0, anyData=false;
+    for(const rd of rangeData){
+      for(let i=0;i<N;i++){
+        if(rd.bins[i]>0){ yMinBin=Math.min(yMinBin,i); yMaxBin=Math.max(yMaxBin,i); anyData=true; }
+      }
+    }
+    if(!anyData){ yMinBin=0; yMaxBin=N-1; }
+    yMinBin=Math.max(0,yMinBin-1); yMaxBin=Math.min(N-1,yMaxBin+1);
+    const yLo=yMinBin/N, yHi=(yMaxBin+1)/N;
 
-    // Y grid + labels at 0, 25, 50, 75, 100
+    // equity → Y position (higher equity = higher on canvas)
+    function py(eq){ return PAD.top + (1-(eq-yLo)/(yHi-yLo)) * ch; }
+    // frequency fraction → X position
+    function px(f){ return PAD.left + f*cw; }
+
+    // Horizontal grid + Y labels (equity %)
     ctx.font=`11px system-ui,sans-serif`;
-    for(const yPct of [0,25,50,75,100]){
-      const yy = py(yPct/100);
+    const yStep = (yHi-yLo)<=0.35 ? 0.05 : 0.1;
+    const tickStart = Math.ceil(yLo/yStep)*yStep;
+    for(let eq=tickStart; eq<=yHi+0.001; eq+=yStep){
+      if(eq<yLo-0.001) continue;
+      const yy=py(eq);
       ctx.strokeStyle=grid; ctx.lineWidth=1;
       ctx.beginPath(); ctx.moveTo(PAD.left,yy); ctx.lineTo(PAD.left+cw,yy); ctx.stroke();
       ctx.fillStyle=lbl; ctx.textAlign="right"; ctx.textBaseline="middle";
-      ctx.fillText(yPct, PAD.left-5, yy);
+      ctx.fillText(Math.round(eq*100)+"%", PAD.left-5, yy);
     }
 
-    // X grid + labels at 0, 25, 50, 75, 100
-    for(const xPct of [0,25,50,75,100]){
-      const xx = px(xPct);
-      ctx.strokeStyle=grid; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(xx,PAD.top); ctx.lineTo(xx,PAD.top+ch); ctx.stroke();
-      ctx.fillStyle=lbl; ctx.textAlign="center"; ctx.textBaseline="top";
-      ctx.fillText(xPct, xx, PAD.top+ch+5);
-    }
-
-    // Threshold dashes at equity bucket boundaries
-    for(const [eq, col] of [[0.33,"rgba(248,113,113,.5)"],[0.40,"rgba(245,158,11,.5)"],[0.75,"rgba(34,197,94,.5)"]]){
-      const yy = py(eq);
-      ctx.strokeStyle=col; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+    // Threshold dashes — horizontal
+    const thresh = [
+      {eq:0.33, c:"rgba(248,113,113,.5)"},
+      {eq:0.40, c:"rgba(245,158,11,.5)"},
+      {eq:0.75, c:"rgba(34,197,94,.5)"},
+    ];
+    for(const t of thresh){
+      if(t.eq<yLo||t.eq>yHi) continue;
+      const yy=py(t.eq);
+      ctx.strokeStyle=t.c; ctx.lineWidth=1; ctx.setLineDash([3,3]);
       ctx.beginPath(); ctx.moveTo(PAD.left,yy); ctx.lineTo(PAD.left+cw,yy); ctx.stroke();
       ctx.setLineDash([]);
     }
 
-    // Build and draw one sorted equity curve per range
+    // Draw each range as horizontal area curves
     for(const rd of rangeData){
-      // Reconstruct sorted equity curve from bins.
-      // Each bin i represents equity band [i/N, (i+1)/N].
-      // Walk bins in order, tracking cumulative rank %.
-      const pts = [];
-      let cumFrac = 0;
-      for(let i=0; i<N; i++){
-        const frac = rd.bins[i]/rd.total;
-        if(frac > 0){
-          // Map the start and end rank of this bin to X; equity midpoint to Y
-          pts.push({x: cumFrac*100,        y: (i+0.5)/N});
-          pts.push({x: (cumFrac+frac)*100, y: (i+0.5)/N});
-        }
-        cumFrac += frac;
-      }
-      if(pts.length < 2) continue;
-
+      const pts = rd.bins
+        .map((b,i)=>({eq:(i+0.5)/N, f:b/rd.peak}))
+        .filter(p=>p.eq>=yLo && p.eq<=yHi+1/N);
+      if(pts.length<2) continue;
       const r=parseInt(rd.color.slice(1,3),16);
       const g=parseInt(rd.color.slice(3,5),16);
       const b=parseInt(rd.color.slice(5,7),16);
 
+      // Filled area — curves rightward, closes back to left axis
+      const grad=ctx.createLinearGradient(PAD.left,0,PAD.left+cw,0);
+      grad.addColorStop(0,`rgba(${r},${g},${b},0.04)`);
+      grad.addColorStop(1,`rgba(${r},${g},${b},0.28)`);
+      ctx.fillStyle=grad;
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, py(pts[0].eq));
+      for(let i=0;i<pts.length;i++){
+        ctx.lineTo(px(pts[i].f), py(pts[i].eq));
+      }
+      for(let i=pts.length-1;i>=0;i--){
+        const my = py((pts[i].eq + (i>0?pts[i-1].eq:pts[i].eq))/2);
+        ctx.lineTo(PAD.left, py(pts[i].eq));
+      }
+      ctx.closePath(); ctx.fill();
+
+      // Smooth stroke — horizontal bezier
       ctx.strokeStyle=rd.color; ctx.lineWidth=2; ctx.lineJoin="round";
       ctx.beginPath();
-      ctx.moveTo(px(pts[0].x), py(pts[0].y));
+      ctx.moveTo(px(pts[0].f), py(pts[0].eq));
       for(let i=1;i<pts.length;i++){
-        const mx = px((pts[i-1].x+pts[i].x)/2);
-        ctx.bezierCurveTo(mx,py(pts[i-1].y), mx,py(pts[i].y), px(pts[i].x),py(pts[i].y));
+        const my = py((pts[i-1].eq+pts[i].eq)/2);
+        ctx.bezierCurveTo(px(pts[i-1].f),my, px(pts[i].f),my, px(pts[i].f),py(pts[i].eq));
       }
       ctx.stroke();
     }
@@ -5105,14 +5098,14 @@ function drawEquityDistChart(canvas, activeKeys, acc, palette, mode, normalize=t
 
     // Y axis title (rotated)
     ctx.save();
-    ctx.translate(12, PAD.top+ch/2);
+    ctx.translate(10, PAD.top+ch/2);
     ctx.rotate(-Math.PI/2);
     ctx.fillStyle=lbl; ctx.font="11px system-ui,sans-serif";
     ctx.textAlign="center"; ctx.textBaseline="middle";
     ctx.fillText("Equity %", 0, 0);
     ctx.restore();
 
-    // Legend top-left
+    // Inline legend (top-right area)
     let lx=PAD.left+8, ly=PAD.top+10;
     ctx.font="bold 10.5px system-ui,sans-serif"; ctx.textBaseline="middle";
     for(const rd of rangeData){
@@ -5130,7 +5123,7 @@ function drawEquityDistChart(canvas, activeKeys, acc, palette, mode, normalize=t
 
   // ── ORIGINAL: equity % on X axis ─────────────────────────────────────
   const H = 200;
-  const PAD = {top:20, right:20, bottom:42, left: freqPct ? 48 : 36};
+  const PAD = {top:20, right:20, bottom:42, left:36};
   canvas.width  = W * DPR; canvas.height = H * DPR;
   canvas.style.width = W+"px"; canvas.style.height = H+"px";
   const ctx = canvas.getContext("2d");
@@ -5167,20 +5160,6 @@ function drawEquityDistChart(canvas, activeKeys, acc, palette, mode, normalize=t
     ctx.fillText(Math.round(x*100)+"%",xx,PAD.top+ch+5);
   }
 
-  // Y gridlines + labels in pct mode
-  if(freqPct){
-    const maxPct = globalPctPeak * 100;
-    const yPctStep = maxPct<=5?1 : maxPct<=15?2 : maxPct<=30?5 : 10;
-    ctx.font=`10px system-ui,sans-serif`;
-    for(let p2=0; p2<=maxPct+0.001; p2+=yPctStep){
-      const yy = py(p2/100/globalPctPeak);
-      ctx.strokeStyle=grid; ctx.lineWidth=1;
-      ctx.beginPath(); ctx.moveTo(PAD.left,yy); ctx.lineTo(PAD.left+cw,yy); ctx.stroke();
-      ctx.fillStyle=lbl; ctx.textAlign="right"; ctx.textBaseline="middle";
-      ctx.fillText(p2+"%", PAD.left-5, yy);
-    }
-  }
-
   // Threshold / category boundary dashes — only if in visible range
   const thresh = mode==="flop"
     ? [ // Hand category boundaries (score = cat/9)
@@ -5209,7 +5188,7 @@ function drawEquityDistChart(canvas, activeKeys, acc, palette, mode, normalize=t
 
   // Draw each range
   for(const rd of rangeData){
-    const pts=rd.vals.map((v,i)=>({x:(i+0.5)/N, y:v/rd.peak}))
+    const pts=rd.bins.map((b,i)=>({x:(i+0.5)/N, y:b/rd.peak}))
       .filter(p=>p.x>=xLo && p.x<=xHi+1/N);
     if(pts.length<2) continue;
     const r=parseInt(rd.color.slice(1,3),16);
@@ -5711,8 +5690,8 @@ function runBucketSamples(heroHands, villHands, samples, runouts, forcedFlops, f
   const fullDeck = buildFullDeck();
   const heroSampler = __buildSampler(heroHands, rng);
   const villSampler = __buildSampler(villHands, rng);
-  let sumEq=0, nNut=0, nGood=0, nMarg=0, nWeak=0;
-  let vNut=0,  vGood=0, vMarg=0, vWeak=0;
+  let sumEq=0, nNut=0, nGood=0, nMarg=0, nTrash=0;
+  let vNut=0,  vGood=0, vMarg=0, vTrash=0;
   let usedSamples=0, attempts=0;
   while(usedSamples < samples && attempts < samples*50){
     attempts++;
@@ -5754,16 +5733,16 @@ function runBucketSamples(heroHands, villHands, samples, runouts, forcedFlops, f
     const eq = (wins + ties*0.5) / runouts;
     sumEq += eq; usedSamples++;
     if(eq>=0.75) nNut++;
-    else if(eq>=0.50) nGood++;
+    else if(eq>=0.40) nGood++;
     else if(eq>=0.33) nMarg++;
-    else nWeak++;
+    else nTrash++;
     const veq = 1-eq;
     if(veq>=0.75) vNut++;
-    else if(veq>=0.50) vGood++;
+    else if(veq>=0.40) vGood++;
     else if(veq>=0.33) vMarg++;
-    else vWeak++;
+    else vTrash++;
   }
-  return { sumEq, nNut, nGood, nMarg, nWeak, vNut, vGood, vMarg, vWeak, usedSamples };
+  return { sumEq, nNut, nGood, nMarg, nTrash, vNut, vGood, vMarg, vTrash, usedSamples };
 }
 `;
 
@@ -5774,7 +5753,7 @@ function runMultiwayBucketSamples(handsArr, samples, runouts, forcedFlops, filte
   const fullDeck = buildFullDeck();
   const samplers = handsArr.map(h => __buildSampler(h, rng));
   const counters = [];
-  for(let i=0;i<nRanges;i++) counters.push({nNut:0,nGood:0,nMarg:0,nWeak:0,sumEq:0,bins:new Array(20).fill(0),winCats:new Array(10).fill(0)});
+  for(let i=0;i<nRanges;i++) counters.push({nNut:0,nGood:0,nMarg:0,nTrash:0,sumEq:0,bins:new Array(20).fill(0),winCats:new Array(10).fill(0)});
   let usedSamples=0, attempts=0;
   while(usedSamples < samples && attempts < samples*100){
     attempts++;
@@ -5828,9 +5807,9 @@ function runMultiwayBucketSamples(handsArr, samples, runouts, forcedFlops, filte
       counters[i].sumEq += eq;
       counters[i].bins[Math.min(19,Math.floor(eq*20))]++;
       if(eq>=0.75) counters[i].nNut++;
-      else if(eq>=0.50) counters[i].nGood++;
+      else if(eq>=0.40) counters[i].nGood++;
       else if(eq>=0.33) counters[i].nMarg++;
-      else counters[i].nWeak++;
+      else counters[i].nTrash++;
       for(let c=0;c<10;c++) counters[i].winCats[c] += winCatCounts[i][c];
     }
     usedSamples++;
@@ -5978,12 +5957,12 @@ async function runBucketSamplesParallel(heroHands, villHands, samples, runouts, 
 }
 
 function mergeBucketResults(parts){
-  const m = { sumEq:0, nNut:0, nGood:0, nMarg:0, nWeak:0,
-              vNut:0,  vGood:0, vMarg:0, vWeak:0, usedSamples:0 };
+  const m = { sumEq:0, nNut:0, nGood:0, nMarg:0, nTrash:0,
+              vNut:0,  vGood:0, vMarg:0, vTrash:0, usedSamples:0 };
   for(const p of parts){
     m.sumEq  += p.sumEq;
-    m.nNut   += p.nNut;  m.nGood  += p.nGood;  m.nMarg  += p.nMarg;  m.nWeak += p.nWeak;
-    m.vNut   += p.vNut;  m.vGood  += p.vGood;  m.vMarg  += p.vMarg;  m.vWeak += p.vWeak;
+    m.nNut   += p.nNut;  m.nGood  += p.nGood;  m.nMarg  += p.nMarg;  m.nTrash += p.nTrash;
+    m.vNut   += p.vNut;  m.vGood  += p.vGood;  m.vMarg  += p.vMarg;  m.vTrash += p.vTrash;
     m.usedSamples += p.usedSamples;
   }
   return m;
@@ -6014,14 +5993,14 @@ async function runMultiwayBucketSamplesParallel(handsArr, samples, runouts, forc
 function mergeMultiwayBucketResults(parts){
   if(!parts || !parts.length) return null;
   const nRanges = parts[0].counters.length;
-  const merged  = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nWeak:0, sumEq:0, bins:new Array(20).fill(0), winCats:new Array(10).fill(0)}));
+  const merged  = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nTrash:0, sumEq:0, bins:new Array(20).fill(0), winCats:new Array(10).fill(0)}));
   let usedSamples = 0;
   for(const p of parts){
     for(let i = 0; i < nRanges; i++){
       merged[i].nNut  += p.counters[i].nNut;
       merged[i].nGood += p.counters[i].nGood;
       merged[i].nMarg += p.counters[i].nMarg;
-      merged[i].nWeak+= p.counters[i].nWeak;
+      merged[i].nTrash+= p.counters[i].nTrash;
       merged[i].sumEq += p.counters[i].sumEq;
       if(p.counters[i].bins) for(let b=0;b<20;b++) merged[i].bins[b] += p.counters[i].bins[b]||0;
       if(p.counters[i].winCats) for(let c=0;c<10;c++) merged[i].winCats[c] += p.counters[i].winCats[c]||0;

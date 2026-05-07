@@ -4221,7 +4221,7 @@ async function computeMultiwayBucketSamples(handsArr, samples, runouts, forcedFl
   const fullDeck = buildFullDeck();
   const rng = Math.random;
   const samplers = handsArr.map(h => __buildSampler(h, rng));
-  const counters = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nWeak:0, sumEq:0, bins:new Array(20).fill(0), winCats:new Array(10).fill(0)}));
+  const counters = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nTrash:0, sumEq:0, bins:new Array(20).fill(0), winCats:new Array(10).fill(0)}));
   let usedSamples = 0, attempts = 0;
   while (usedSamples < samples && attempts < samples * 100) {
     attempts++;
@@ -4279,9 +4279,9 @@ async function computeMultiwayBucketSamples(handsArr, samples, runouts, forcedFl
       counters[i].sumEq += eq;
       counters[i].bins[Math.min(19, Math.floor(eq * 20))]++;
       if      (eq >= 0.75) counters[i].nNut++;
-      else if (eq >= 0.50) counters[i].nGood++;
+      else if (eq >= 0.40) counters[i].nGood++;
       else if (eq >= 0.33) counters[i].nMarg++;
-      else                 counters[i].nWeak++;
+      else                 counters[i].nTrash++;
       for(let c=0;c<10;c++) counters[i].winCats[c] += winCatCounts[i][c];
     }
     usedSamples++;
@@ -4347,7 +4347,7 @@ async function runFlopStrengthSamples(handsArr, samples, forcedFlops, filterIds,
   const rng = Math.random;
   const samplers = handsArr.map(h => __buildSampler(h, rng));
   const counters = Array.from({length:nRanges}, ()=>({
-    nNut:0, nGood:0, nMarg:0, nWeak:0, sumEq:0,
+    nNut:0, nGood:0, nMarg:0, nTrash:0, sumEq:0,
     bins: new Array(20).fill(0),
     cats: new Array(nCats).fill(0)
   }));
@@ -4376,9 +4376,9 @@ async function runFlopStrengthSamples(handsArr, samples, forcedFlops, filterIds,
       counters[i].cats[catIdx]++;
       counters[i].bins[Math.min(19, Math.floor(score*20))]++;
       if     (score >= 0.75) counters[i].nNut++;
-      else if(score >= 0.50) counters[i].nGood++;
+      else if(score >= 0.40) counters[i].nGood++;
       else if(score >= 0.33) counters[i].nMarg++;
-      else                   counters[i].nWeak++;
+      else                   counters[i].nTrash++;
     }
     usedSamples++;
     if(usedSamples%50===0){ if(progressCb) progressCb(usedSamples/samples); await new Promise(r=>setTimeout(r,0)); }
@@ -4471,7 +4471,7 @@ async function computeEquityBucketsForSelection(){
       __bucketAccum.counters[i].nNut   += raw.counters[i].nNut;
       __bucketAccum.counters[i].nGood  += raw.counters[i].nGood;
       __bucketAccum.counters[i].nMarg  += raw.counters[i].nMarg;
-      __bucketAccum.counters[i].nWeak += raw.counters[i].nWeak;
+      __bucketAccum.counters[i].nTrash += raw.counters[i].nTrash;
       __bucketAccum.counters[i].sumEq  += raw.counters[i].sumEq;
       if(raw.counters[i].bins) for(let b=0;b<20;b++) __bucketAccum.counters[i].bins[b] = (__bucketAccum.counters[i].bins[b]||0) + (raw.counters[i].bins[b]||0);
       if(raw.counters[i].cats) for(let b=0;b<FLOP_CATS.length;b++) __bucketAccum.counters[i].cats[b] = (__bucketAccum.counters[i].cats[b]||0) + (raw.counters[i].cats[b]||0);
@@ -4490,7 +4490,7 @@ async function computeEquityBucketsForSelection(){
     nut:   usedSamples > 0 ? c.nNut   / usedSamples : 0,
     good:  usedSamples > 0 ? c.nGood  / usedSamples : 0,
     marg:  usedSamples > 0 ? c.nMarg  / usedSamples : 0,
-    weak: usedSamples > 0 ? c.nWeak / usedSamples : 0,
+    trash: usedSamples > 0 ? c.nTrash / usedSamples : 0,
   }));
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -4504,12 +4504,12 @@ async function computeEquityBucketsForSelection(){
     { key:"nut",   label:"Set+/Str/Flush", color:"#22c55e" },
     { key:"good",  label:"Pair+Draw/2pr+",  color:"#60a5fa" },
     { key:"marg",  label:"Two pair",        color:"#f59e0b" },
-    { key:"weak", label:"Pair/Air",        color:"#f87171" },
+    { key:"trash", label:"Pair/Air",        color:"#f87171" },
   ] : [
     { key:"nut",   label:"Nut",   color:"#22c55e" },
     { key:"good",  label:"Good",  color:"#60a5fa" },
     { key:"marg",  label:"Marg",  color:"#f59e0b" },
-    { key:"weak", label:"Weak", color:"#f87171" },
+    { key:"trash", label:"Trash", color:"#f87171" },
   ];
 
   const nRanges = activeKeys.length;
@@ -5711,8 +5711,8 @@ function runBucketSamples(heroHands, villHands, samples, runouts, forcedFlops, f
   const fullDeck = buildFullDeck();
   const heroSampler = __buildSampler(heroHands, rng);
   const villSampler = __buildSampler(villHands, rng);
-  let sumEq=0, nNut=0, nGood=0, nMarg=0, nWeak=0;
-  let vNut=0,  vGood=0, vMarg=0, vWeak=0;
+  let sumEq=0, nNut=0, nGood=0, nMarg=0, nTrash=0;
+  let vNut=0,  vGood=0, vMarg=0, vTrash=0;
   let usedSamples=0, attempts=0;
   while(usedSamples < samples && attempts < samples*50){
     attempts++;
@@ -5754,16 +5754,16 @@ function runBucketSamples(heroHands, villHands, samples, runouts, forcedFlops, f
     const eq = (wins + ties*0.5) / runouts;
     sumEq += eq; usedSamples++;
     if(eq>=0.75) nNut++;
-    else if(eq>=0.50) nGood++;
+    else if(eq>=0.40) nGood++;
     else if(eq>=0.33) nMarg++;
-    else nWeak++;
+    else nTrash++;
     const veq = 1-eq;
     if(veq>=0.75) vNut++;
-    else if(veq>=0.50) vGood++;
+    else if(veq>=0.40) vGood++;
     else if(veq>=0.33) vMarg++;
-    else vWeak++;
+    else vTrash++;
   }
-  return { sumEq, nNut, nGood, nMarg, nWeak, vNut, vGood, vMarg, vWeak, usedSamples };
+  return { sumEq, nNut, nGood, nMarg, nTrash, vNut, vGood, vMarg, vTrash, usedSamples };
 }
 `;
 
@@ -5774,7 +5774,7 @@ function runMultiwayBucketSamples(handsArr, samples, runouts, forcedFlops, filte
   const fullDeck = buildFullDeck();
   const samplers = handsArr.map(h => __buildSampler(h, rng));
   const counters = [];
-  for(let i=0;i<nRanges;i++) counters.push({nNut:0,nGood:0,nMarg:0,nWeak:0,sumEq:0,bins:new Array(20).fill(0),winCats:new Array(10).fill(0)});
+  for(let i=0;i<nRanges;i++) counters.push({nNut:0,nGood:0,nMarg:0,nTrash:0,sumEq:0,bins:new Array(20).fill(0),winCats:new Array(10).fill(0)});
   let usedSamples=0, attempts=0;
   while(usedSamples < samples && attempts < samples*100){
     attempts++;
@@ -5828,9 +5828,9 @@ function runMultiwayBucketSamples(handsArr, samples, runouts, forcedFlops, filte
       counters[i].sumEq += eq;
       counters[i].bins[Math.min(19,Math.floor(eq*20))]++;
       if(eq>=0.75) counters[i].nNut++;
-      else if(eq>=0.50) counters[i].nGood++;
+      else if(eq>=0.40) counters[i].nGood++;
       else if(eq>=0.33) counters[i].nMarg++;
-      else counters[i].nWeak++;
+      else counters[i].nTrash++;
       for(let c=0;c<10;c++) counters[i].winCats[c] += winCatCounts[i][c];
     }
     usedSamples++;
@@ -5978,12 +5978,12 @@ async function runBucketSamplesParallel(heroHands, villHands, samples, runouts, 
 }
 
 function mergeBucketResults(parts){
-  const m = { sumEq:0, nNut:0, nGood:0, nMarg:0, nWeak:0,
-              vNut:0,  vGood:0, vMarg:0, vWeak:0, usedSamples:0 };
+  const m = { sumEq:0, nNut:0, nGood:0, nMarg:0, nTrash:0,
+              vNut:0,  vGood:0, vMarg:0, vTrash:0, usedSamples:0 };
   for(const p of parts){
     m.sumEq  += p.sumEq;
-    m.nNut   += p.nNut;  m.nGood  += p.nGood;  m.nMarg  += p.nMarg;  m.nWeak += p.nWeak;
-    m.vNut   += p.vNut;  m.vGood  += p.vGood;  m.vMarg  += p.vMarg;  m.vWeak += p.vWeak;
+    m.nNut   += p.nNut;  m.nGood  += p.nGood;  m.nMarg  += p.nMarg;  m.nTrash += p.nTrash;
+    m.vNut   += p.vNut;  m.vGood  += p.vGood;  m.vMarg  += p.vMarg;  m.vTrash += p.vTrash;
     m.usedSamples += p.usedSamples;
   }
   return m;
@@ -6014,14 +6014,14 @@ async function runMultiwayBucketSamplesParallel(handsArr, samples, runouts, forc
 function mergeMultiwayBucketResults(parts){
   if(!parts || !parts.length) return null;
   const nRanges = parts[0].counters.length;
-  const merged  = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nWeak:0, sumEq:0, bins:new Array(20).fill(0), winCats:new Array(10).fill(0)}));
+  const merged  = Array.from({length: nRanges}, () => ({nNut:0, nGood:0, nMarg:0, nTrash:0, sumEq:0, bins:new Array(20).fill(0), winCats:new Array(10).fill(0)}));
   let usedSamples = 0;
   for(const p of parts){
     for(let i = 0; i < nRanges; i++){
       merged[i].nNut  += p.counters[i].nNut;
       merged[i].nGood += p.counters[i].nGood;
       merged[i].nMarg += p.counters[i].nMarg;
-      merged[i].nWeak+= p.counters[i].nWeak;
+      merged[i].nTrash+= p.counters[i].nTrash;
       merged[i].sumEq += p.counters[i].sumEq;
       if(p.counters[i].bins) for(let b=0;b<20;b++) merged[i].bins[b] += p.counters[i].bins[b]||0;
       if(p.counters[i].winCats) for(let c=0;c<10;c++) merged[i].winCats[c] += p.counters[i].winCats[c]||0;
