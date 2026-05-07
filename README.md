@@ -31,13 +31,15 @@ No install. No server. Download and open in any browser.
 ### Equity Buckets
 - True N-way equity computation (not pairwise) — all active ranges compete simultaneously
 - **Two views:**
-  - **Runout equity** — Monte Carlo runouts to showdown; buckets: Nut (≥75%), Good (40–75%), Marginal (33–40%), Trash (<33%)
+  - **Runout equity** — Monte Carlo runouts to showdown; buckets: Nut (≥75%), Good (50–75%), Marginal (33–50%), Weak (<33%)
   - **Flop made hands** — evaluates hand strength on the flop only (no runout); stacked bar showing Air, Pair, Draw, Two pair, Set/Trips, Straight, Flush, Full house/Quads
-- **Winning hands at showdown chart** — stacked bar per range showing which PLO hand category wins the pot most often (High card / One pair / Two pair / Trips / Set / Straight / Flush / Full house / Quads / Str. flush); Set and Trips tracked separately
-- **Equity distribution chart** — smoothed curve per range showing the full equity distribution across samples, with hover tooltip showing hand type labels
+- **Winning hands at showdown chart** — stacked bar per range showing which hand category wins at showdown (High card through Str. flush); Set and Trips tracked separately; toggle between % of wins and % of samples
+- **Equity distribution chart** — two display modes toggled per-chart:
+  - **equity: X** — smoothed histogram with equity % on the X axis and frequency (or % of range) on Y; hover tooltip shows hand type labels at each equity level
+  - **equity: Y** — sorted equity curve (CDF-style): X = rank percentile of each hand in the range (weakest→strongest), Y = equity %; reveals range advantage as the vertical gap between curves
+  - **frequency / % of range** toggle — switches the other axis between a normalized shape view and labeled actual percentages
 - Results accumulate across repeated runs for higher sample counts
 - Filterable by any selected flop type or specific boards
-- Full-width layout with interactive hover tooltips on all charts
 - Parallel web worker execution
 
 ### Quiz Mode
@@ -90,8 +92,8 @@ Everything lives in one HTML file — no build step, no dependencies, no server.
 - **Hand analysis:** Pure functions classify suitedness, connectivity, pairing, and rank strength; connectivity labels include Rundown, Gapped, and Disconnected
 - **Simulation:** Seeded Mulberry32 PRNG, parallelised across Web Workers
 - **Equity lookup:** Embedded 16,432-group equity table (~175KB) powers the `%` percentile syntax for PLO4
-- **Persistence:** IndexedDB for saved ranges; `localStorage` for theme, UI state, and NL translator examples
-- **Charts:** Canvas 2D API (bar charts, stacked bars, equity distribution curves, hover overlays)
+- **Persistence:** IndexedDB for saved ranges; `localStorage` for UI state
+- **Charts:** Canvas 2D API (bar charts, stacked bars, equity distribution curves, sorted equity curves, hover overlays)
 
 ---
 
