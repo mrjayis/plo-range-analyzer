@@ -92,6 +92,7 @@ Everything lives in one HTML file — no build step, no dependencies, no server.
 - **Hand analysis:** Pure functions classify suitedness, connectivity, pairing, and rank strength; connectivity labels include Rundown, Gapped, and Disconnected
 - **Simulation:** Seeded Mulberry32 PRNG, parallelised across Web Workers
 - **Equity lookup:** Embedded 16,432-group equity table (~175KB) powers the `%` percentile syntax for PLO4
+- **PLO5/PLO6 equity tables:** `plo5_equity.bin.gz` (134,459 suit classes, 253 KB) and `plo6_equity.bin.gz` (962,988 classes, 1.8 MB), each class vs one random hand of the same size over 50,000 deals, load on demand when PLO5/6 is selected and make `%` an exact cut against all hands. They must be served next to `index.html`; if one can't load (e.g. opened from disk), `%` falls back to the anchor-hand heuristic
 - **Persistence:** IndexedDB for saved ranges; `localStorage` for UI state
 - **Charts:** Canvas 2D API (bar charts, stacked bars, equity distribution curves, sorted equity curves, hover overlays)
 
