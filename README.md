@@ -20,7 +20,7 @@ No install. No server. Download and open in any browser.
 
 ### Flop Explorer
 - Monte Carlo simulation across all flop types for up to 6 ranges simultaneously
-- Tracks made hands (two pair, set, flush, straight, full house, etc.) and draws (flush draw, OESD, gutshot, wraps, etc.) per range per flop type
+- Tracks made hands (two pair, set, flush, straight, full house, etc.) and draws (flush draw, **nut flush draw**, OESD, gutshot) per range per flop type
 - Flop type catalog: Any, Monotone, Two-tone, Rainbow, Paired, Unpaired, Trips, Low, 2-broadway, 3-broadway, High-connected, Low-connected
 - Multi-select flop types to intersect (e.g. Paired ∩ Monotone)
 - Flop types with the largest frequency gap between ranges are highlighted automatically
